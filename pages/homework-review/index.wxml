@@ -1,0 +1,67 @@
+<view class="container">
+  <!-- 作业详情 -->
+  <view class="homework-detail" wx:if="{{homework}}">
+    <view class="section">
+      <view class="section-title">基本信息</view>
+      <view class="info-item">
+        <text class="label">学生姓名</text>
+        <text class="value">{{homework.student.name}}</text>
+      </view>
+      <view class="info-item">
+        <text class="label">提交时间</text>
+        <text class="value">{{homework.createTime}}</text>
+      </view>
+      <view class="info-item">
+        <text class="label">作业说明</text>
+        <text class="value">{{homework.description || '无'}}</text>
+      </view>
+    </view>
+
+    <!-- 文件列表 -->
+    <view class="section" wx:if="{{homework.files.length > 0}}">
+      <view class="section-title">提交文件</view>
+      <view class="files-grid">
+        <view class="file-item" wx:for="{{homework.files}}" wx:key="id" bindtap="previewImage" data-url="{{item.url}}">
+          <image class="file-preview" src="{{item.url}}" mode="aspectFill"></image>
+          <text class="file-name">{{item.name}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 审核按钮 -->
+    <view class="review-button" wx:if="{{!isLocked || (isLocked && !lockedBy)}}">
+      <button class="btn-review" bindtap="showReviewModal" loading="{{loading}}">
+        审核作业
+      </button>
+    </view>
+  </view>
+
+  <!-- 审核表单弹窗 -->
+  <view class="modal" wx:if="{{showReviewForm}}">
+    <view class="modal-content">
+      <view class="modal-header">
+        <text class="modal-title">作业审核</text>
+      </view>
+      <view class="modal-body">
+        <view class="form-item">
+          <text class="label">积分</text>
+          <input class="input" type="number" placeholder="请输入积分" value="{{reviewForm.points}}" bindinput="onPointsInput"/>
+        </view>
+        <view class="form-item">
+          <text class="label">评语</text>
+          <textarea class="textarea" placeholder="请输入评语" value="{{reviewForm.comment}}" bindinput="onCommentInput"></textarea>
+        </view>
+      </view>
+      <view class="modal-footer">
+        <button class="btn btn-cancel" bindtap="hideReviewModal">取消</button>
+        <button class="btn btn-confirm" bindtap="submitReview" loading="{{loading}}">提交</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 加载中 -->
+  <view class="loading" wx:if="{{loading}}">
+    <view class="loading-icon"></view>
+    <text>加载中...</text>
+  </view>
+</view> 

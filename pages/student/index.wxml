@@ -1,0 +1,104 @@
+<view class="container">
+  <!-- 头部用户信息 -->
+  <view class="user-info">
+    <image class="avatar" src="{{userInfo.avatarUrl || '/images/icons/student.png'}}" mode="aspectFill"></image>
+    <view class="info">
+      <view class="name">{{userInfo.nickName || '同学'}}</view>
+      <view class="points">总积分：{{pointsDetail.totalPoints}}</view>
+    </view>
+  </view>
+
+  <!-- 积分统计卡片 -->
+  <view class="stats-card">
+    <view class="stat-item">
+      <text class="value">{{pointsDetail.monthPoints}}</text>
+      <text class="label">本月积分</text>
+    </view>
+    <view class="stat-item">
+      <text class="value">{{pointsDetail.submissionCount}}</text>
+      <text class="label">提交次数</text>
+    </view>
+    <view class="stat-item">
+      <text class="value">{{pointsDetail.passRate}}%</text>
+      <text class="label">通过率</text>
+    </view>
+  </view>
+
+  <!-- 文件上传区域 -->
+  <view class="upload-section">
+    <view class="upload-header">
+      <text class="title">作业提交</text>
+      <text class="subtitle">支持图片和视频上传，最多10个文件</text>
+    </view>
+
+    <view class="file-list" wx:if="{{selectedFiles.length > 0}}">
+      <view class="file-item" wx:for="{{selectedFiles}}" wx:key="path">
+        <text class="file-name">{{item.name}}</text>
+        <text class="delete-btn" bindtap="handleCancelUpload" data-index="{{index}}">×</text>
+      </view>
+    </view>
+
+    <view class="upload-buttons">
+      <button class="choose-btn" bindtap="handleChooseFile" disabled="{{uploading}}">
+        选择文件
+      </button>
+      <button class="upload-btn" bindtap="handleUpload" 
+              disabled="{{uploading || selectedFiles.length === 0}}">
+        {{uploading ? '上传中...' : '开始上传'}}
+      </button>
+    </view>
+
+    <view class="progress-bar" wx:if="{{uploading}}">
+      <view class="progress" style="width: {{uploadProgress}}%"></view>
+      <text class="progress-text">{{uploadProgress}}%</text>
+    </view>
+  </view>
+
+  <!-- 标签页 -->
+  <view class="tabs">
+    <view class="tab-header">
+      <view class="tab {{currentTab === index ? 'active' : ''}}"
+            wx:for="{{['积分历史', '积分规则']}}"
+            wx:key="*this"
+            bindtap="onTabChange"
+            data-index="{{index}}">
+        {{item}}
+      </view>
+    </view>
+
+    <!-- 积分历史 -->
+    <view class="tab-content" hidden="{{currentTab !== 0}}">
+      <view class="history-list">
+        <view class="history-item" wx:for="{{pointsHistory}}" wx:key="id">
+          <view class="history-info">
+            <view class="history-title">{{item.description}}</view>
+            <view class="history-meta">
+              <text class="time">{{item.createTime}}</text>
+              <text class="reviewer" wx:if="{{item.reviewer}}">{{item.reviewer}}</text>
+            </view>
+          </view>
+          <view class="history-points {{item.type === 'add' ? 'plus' : 'minus'}}">
+            {{item.type === 'add' ? '+' : '-'}}{{item.points}}
+          </view>
+        </view>
+        <view class="empty-tip" wx:if="{{pointsHistory.length === 0}}">
+          暂无积分记录
+        </view>
+      </view>
+    </view>
+
+    <!-- 积分规则 -->
+    <view class="tab-content" hidden="{{currentTab !== 1}}">
+      <view class="rules-list">
+        <view class="rule-item" wx:for="{{pointsRules}}" wx:key="id">
+          <view class="rule-title">{{item.title}}</view>
+          <view class="rule-desc">{{item.description}}</view>
+          <view class="rule-points">{{item.points}}分</view>
+        </view>
+        <view class="empty-tip" wx:if="{{pointsRules.length === 0}}">
+          暂无积分规则
+        </view>
+      </view>
+    </view>
+  </view>
+</view> 

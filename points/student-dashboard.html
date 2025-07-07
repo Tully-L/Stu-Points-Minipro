@@ -1,0 +1,1420 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>学生工作台 - 积分管理系统</title>
+    
+    <!-- Vant 2 UI组件库 -->
+    <link rel="stylesheet" href="https://unpkg.com/vant@2.12.54/lib/index.css">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f7f8fa;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        .container {
+            max-width: 414px;
+            margin: 0 auto;
+            background: white;
+            min-height: 100vh;
+        }
+        
+        .header {
+            background: #1989fa;
+            color: white;
+            padding: 16px;
+            text-align: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+        }
+        
+        .content {
+            padding: 16px;
+            padding-top: 80px;
+            padding-bottom: 50px;
+        }
+        
+        .upload-section {
+            margin-bottom: 24px;
+        }
+        
+        .form-item {
+            margin-bottom: 16px;
+        }
+        
+        .form-item label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #323233;
+        }
+        
+        .submit-btn {
+            width: 100%;
+            margin-top: 24px;
+        }
+        
+        .stats-card {
+            background: #f7f8fa;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
+        
+        .stats-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        
+        .stats-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .status-approved {
+            color: #07c160;
+            font-weight: 500;
+        }
+        
+        .status-rejected {
+            color: #ee0a24;
+            font-weight: 500;
+        }
+        
+        .status-pending {
+            color: #ff976a;
+            font-weight: 500;
+        }
+        
+        .van-cell-group {
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .van-cell__label {
+            color: #969799;
+            font-size: 12px;
+        }
+        
+        .file-preview {
+            max-width: 100%;
+            max-height: 150px;
+            margin-top: 10px;
+            border-radius: 4px;
+        }
+        
+        .file-list {
+            margin-top: 10px;
+        }
+        
+        .file-item {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            background: #f2f3f5;
+            border-radius: 4px;
+            margin-bottom: 8px;
+        }
+        
+        .file-icon {
+            margin-right: 8px;
+        }
+        
+        .van-uploader__preview-image {
+            width: 80px;
+            height: 80px;
+        }
+        
+        .file-status {
+            background: #f2f3f5;
+            padding: 8px;
+            border-radius: 4px;
+            margin-top: 8px;
+            font-size: 12px;
+            color: #969799;
+        }
+        
+        .file-status.has-files {
+            color: #07c160;
+        }
+        
+        .container {
+            padding: 16px;
+        }
+        
+        .tab-content {
+            padding: 16px 0;
+        }
+        
+        .point-card {
+            background-color: #1989fa;
+            color: white;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+        
+        .point-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 16px;
+            font-size: 16px;
+        }
+        
+        .point-header span:last-child {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        
+        .point-details {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+        
+        .point-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 50%;
+            margin-bottom: 12px;
+        }
+        
+        .point-item span:first-child {
+            font-size: 12px;
+            margin-bottom: 4px;
+        }
+        
+        .point-item span:last-child {
+            font-size: 16px;
+            font-weight: bold;
+        }
+        
+        .action-row {
+            margin-top: 12px;
+            display: flex;
+            justify-content: flex-end;
+            color: #ffffff;
+        }
+        
+        .request-link-btn {
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            font-weight: bold;
+            padding: 0 16px;
+            height: 36px;
+            line-height: 34px;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <van-nav-bar
+            title="学生工作台"
+            left-text="返回"
+            left-arrow
+            fixed
+            placeholder
+        >
+            <template #right>
+                <van-icon name="bars" size="18" />
+            </template>
+        </van-nav-bar>
+        
+        <div class="container">
+            <van-row>
+                <van-col span="24">
+                    <div class="point-card">
+                        <div class="point-header">
+                            <span>个人信息</span>
+                            <span id="studentNameDisplay" onclick="showNameSettingDialog()" style="cursor: pointer;">未设置姓名</span>
+                        </div>
+                        <div class="point-details">
+                            <div class="point-item">
+                                <span>账号ID</span>
+                                <span id="studentAccountId">S12345</span>
+                            </div>
+                            <div class="point-item">
+                                <span>总积分</span>
+                                <span id="totalPoints">0</span>
+                            </div>
+                            <div class="point-item">
+                                <span>本月积分</span>
+                                <span id="monthlyPoints">0</span>
+                            </div>
+                            <div class="point-item">
+                                <span>提交次数</span>
+                                <span id="submissionCount">0</span>
+                            </div>
+                        </div>
+                        <div class="action-row">
+                            <van-button size="small" type="primary" id="requestLinkBtn" class="request-link-btn">请求关联家长</van-button>
+                        </div>
+                    </div>
+                </van-col>
+            </van-row>
+            
+            <van-tabs v-model="activeTab">
+                <van-tab title="提交作业">
+                    <div class="tab-content">
+                        <van-cell-group inset>
+                            <div id="subjectPicker"></div>
+                            <div id="typePicker"></div>
+                            
+                            <van-cell title="上传文件">
+                                <div id="fileUploadContainer">
+                                    <input type="file" id="fileInput" multiple accept=".jpg,.jpeg,.png,.mp4" style="display:none;">
+                                    <button id="selectFilesBtn" class="van-button van-button--primary van-button--small">选择文件</button>
+                                    <span id="fileStatus" class="file-status">未上传文件</span>
+                                    <div id="previewContainer" class="preview-container"></div>
+                                </div>
+                            </van-cell>
+                            
+                            <div id="remarkField"></div>
+                        </van-cell-group>
+                        
+                        <div id="submitBtn" class="submit-btn-container"></div>
+                    </div>
+                </van-tab>
+                <van-tab title="历史记录">
+                    <div class="tab-content">
+                        <div id="historyList" class="history-list"></div>
+                    </div>
+                </van-tab>
+                <van-tab title="设置">
+                    <div class="tab-content">
+                        <van-cell-group inset title="家长关联">
+                            <div id="parentLinkSection">
+                                <van-cell-group>
+                                    <van-cell title="关联状态">
+                                        <template #right-icon>
+                                            <van-tag v-if="linkedParent" type="success">已关联</van-tag>
+                                            <van-tag v-else-if="linkPending" type="primary">待确认</van-tag>
+                                            <van-tag v-else type="warning">未关联</van-tag>
+                                        </template>
+                                    </van-cell>
+                                    <van-cell v-if="linkedParent" :title="'关联家长: ' + linkedParent.name">
+                                        <template #label>
+                                            <span>家长账号: {{ linkedParent.id }}</span>
+                                        </template>
+                                    </van-cell>
+                                    <van-cell v-if="linkPending" :title="'等待确认: ' + pendingParentName">
+                                        <template #label>
+                                            <span>请求已发送，等待家长确认</span>
+                                        </template>
+                                    </van-cell>
+                                </van-cell-group>
+                                
+                                <div style="padding: 16px;">
+                                    <van-button type="primary" block @click="requestLink">请求关联家长</van-button>
+                                </div>
+                            </div>
+                        </van-cell-group>
+                        
+                        <van-cell-group inset title="个人信息" style="margin-top: 16px;">
+                            <van-field
+                                v-model="studentName"
+                                label="姓名"
+                                placeholder="请输入您的姓名"
+                            />
+                            <div style="padding: 16px;">
+                                <van-button type="primary" block @click="saveStudentInfo">保存姓名</van-button>
+                            </div>
+                        </van-cell-group>
+                    </div>
+                </van-tab>
+            </van-tabs>
+        </div>
+    </div>
+    
+    <!-- Vue 2.x -->
+    <script src="https://unpkg.com/vue@2.6.14/dist/vue.min.js"></script>
+    
+    <!-- Vant JavaScript -->
+    <script src="https://unpkg.com/vant@2.12.54/lib/vant.min.js"></script>
+    
+    <script>
+        // 全局状态管理
+        const appData = {
+            selectedSubject: null,
+            selectedType: null,
+            uploadedFiles: [],
+            activeTab: 0,
+            studentInfo: {
+                id: '',
+                name: '',
+                accountId: ''
+            }
+        };
+        
+        // 科目选项
+        const subjects = [
+            { text: '数学', value: 'math' },
+            { text: '语文', value: 'chinese' },
+            { text: '英语', value: 'english' },
+            { text: '物理', value: 'physics' },
+            { text: '化学', value: 'chemistry' },
+            { text: '生物', value: 'biology' },
+            { text: '历史', value: 'history' },
+            { text: '地理', value: 'geography' },
+            { text: '政治', value: 'politics' }
+        ];
+        
+        // 内容类型选项
+        const contentTypes = [
+            { text: '作业', value: 'homework' },
+            { text: '考试', value: 'exam' },
+            { text: '练习', value: 'practice' },
+            { text: '学习视频', value: 'video' },
+            { text: '笔记', value: 'notes' }
+        ];
+        
+        // 初始化页面
+        document.addEventListener('DOMContentLoaded', function() {
+            initComponents();
+            setupFileUpload();
+            loadUserData();
+            updateFileStatus();
+            initSettingsTab();
+            initStudentAccount();
+        });
+        
+        // 初始化学生账号
+        function initStudentAccount() {
+            // 检查是否已有账号，如果没有则创建
+            let studentInfo = JSON.parse(sessionStorage.getItem('studentInfo') || '{}');
+            
+            if (!studentInfo.accountId) {
+                // 生成随机账号ID (格式: S + 5位数字)
+                const accountId = 'S' + Math.floor(10000 + Math.random() * 90000);
+                studentInfo.accountId = accountId;
+                
+                // 默认姓名设置为账号ID
+                if (!studentInfo.name) {
+                    studentInfo.name = accountId;
+                }
+                
+                sessionStorage.setItem('studentInfo', JSON.stringify(studentInfo));
+            }
+            
+            // 如果没有设置姓名，默认使用账号ID
+            if (!studentInfo.name) {
+                studentInfo.name = studentInfo.accountId;
+                sessionStorage.setItem('studentInfo', JSON.stringify(studentInfo));
+            }
+            
+            // 更新显示
+            const accountIdEl = document.getElementById('studentAccountId');
+            if (accountIdEl) accountIdEl.textContent = studentInfo.accountId;
+            
+            const nameDisplayEl = document.getElementById('studentNameDisplay');
+            if (nameDisplayEl) nameDisplayEl.textContent = studentInfo.name;
+            
+            // 设置请求关联按钮事件
+            const requestLinkBtn = document.getElementById('requestLinkBtn');
+            if (requestLinkBtn) {
+                requestLinkBtn.addEventListener('click', function() {
+                    showLinkRequestDialog();
+                });
+            }
+            
+            // 将学生信息添加到全局学生信息列表中
+            const allStudentInfos = JSON.parse(sessionStorage.getItem('allStudentInfos') || '[]');
+            const existingIndex = allStudentInfos.findIndex(s => s.accountId === studentInfo.accountId);
+            
+            if (existingIndex === -1) {
+                allStudentInfos.push(studentInfo);
+            } else {
+                allStudentInfos[existingIndex] = studentInfo;
+            }
+            
+            sessionStorage.setItem('allStudentInfos', JSON.stringify(allStudentInfos));
+            
+            // 检查关联状态
+            checkAndUpdateLinkStatus(studentInfo);
+        }
+        
+        // 检查并更新关联状态
+        function checkAndUpdateLinkStatus(studentInfo) {
+            // 检查学生是否已关联家长
+            const relatedStudents = JSON.parse(sessionStorage.getItem('relatedStudents') || '[]');
+            const relatedRecord = relatedStudents.find(student => student.id === studentInfo.accountId);
+            
+            if (relatedRecord) {
+                // 已关联，保存关联信息
+                studentInfo.linkedParent = {
+                    id: relatedRecord.parentId,
+                    name: relatedRecord.parentName || '家长'
+                };
+                sessionStorage.setItem('studentInfo', JSON.stringify(studentInfo));
+                
+                // 清除可能存在的待确认状态
+                const studentLinkStatus = JSON.parse(sessionStorage.getItem('studentLinkStatus') || '{}');
+                if (studentLinkStatus.pendingParentId) {
+                    delete studentLinkStatus.pendingParentId;
+                    delete studentLinkStatus.pendingParentName;
+                    sessionStorage.setItem('studentLinkStatus', JSON.stringify(studentLinkStatus));
+                }
+            }
+        }
+        
+        // 显示关联请求对话框
+        function showLinkRequestDialog() {
+            // 检查是否设置了姓名
+            const studentInfo = JSON.parse(sessionStorage.getItem('studentInfo') || '{}');
+            if (!studentInfo.name) {
+                vant.Dialog.alert({
+                    title: '请先设置姓名',
+                    message: '请在设置页面中设置您的姓名后再请求关联',
+                }).then(() => {
+                    // 切换到设置选项卡
+                    const settingsTab = document.querySelector('.van-tabs__nav .van-tab:nth-child(3)');
+                    if (settingsTab) {
+                        settingsTab.click();
+                    } else {
+                        // 如果找不到标签，直接显示设置对话框
+                        showNameSettingDialog();
+                    }
+                });
+                return;
+            }
+            
+            vant.Dialog.confirm({
+                title: '请求关联家长',
+                message: '请输入家长提供的关联码或家长账号',
+                showCancelButton: true,
+                confirmButtonText: '提交请求',
+                beforeClose: (action, done) => {
+                    if (action === 'confirm') {
+                        const input = document.querySelector('#linkCodeInput');
+                        if (input) {
+                            submitLinkRequest(input.value, done);
+                        } else {
+                            done();
+                            vant.Toast('操作失败，请重试');
+                        }
+                    } else {
+                        done();
+                    }
+                }
+            }).then(() => {
+                // 确认后的操作
+            }).catch(() => {
+                // 取消后的操作
+            });
+            
+            // 创建输入框
+            setTimeout(() => {
+                const dialogContent = document.querySelector('.van-dialog__content');
+                if (dialogContent) {
+                    const inputHtml = `
+                        <div style="padding: 0 16px;">
+                            <input id="linkCodeInput" class="van-field__control" 
+                                   placeholder="请输入6位关联码或家长账号" 
+                                   style="width: 100%; padding: 10px; margin-top: 10px; border: 1px solid #ebedf0; border-radius: 4px;">
+                        </div>
+                    `;
+                    dialogContent.innerHTML = inputHtml + dialogContent.innerHTML;
+                }
+            }, 10);
+        }
+        
+        // 显示名字设置对话框
+        function showNameSettingDialog() {
+            const studentInfo = JSON.parse(sessionStorage.getItem('studentInfo') || '{}');
+            const defaultName = studentInfo.name || studentInfo.accountId || '';
+            
+            vant.Dialog.confirm({
+                title: '设置姓名',
+                message: '请输入您的姓名（至少1个字符）',
+                showCancelButton: true,
+                confirmButtonText: '保存',
+                beforeClose: (action, done) => {
+                    if (action === 'confirm') {
+                        const input = document.querySelector('#nameInput');
+                        if (input && input.value && input.value.trim().length > 0) {
+                            // 保存姓名
+                            const studentInfo = JSON.parse(sessionStorage.getItem('studentInfo') || '{}');
+                            studentInfo.name = input.value.trim();
+                            sessionStorage.setItem('studentInfo', JSON.stringify(studentInfo));
+                            
+                            // 更新显示
+                            const nameDisplay = document.getElementById('studentNameDisplay');
+                            if (nameDisplay) {
+                                nameDisplay.textContent = studentInfo.name;
+                            }
+                            
+                            // 更新设置页面中的姓名输入框
+                            const settingsSection = document.querySelector('#parentLinkSection');
+                            if (settingsSection && settingsSection.__vue__) {
+                                settingsSection.__vue__.studentName = studentInfo.name;
+                            }
+                            
+                            done();
+                            vant.Toast.success('姓名设置成功');
+                        } else {
+                            vant.Toast('请输入有效的姓名');
+                            return false; // 阻止对话框关闭
+                        }
+                    } else {
+                        done();
+                    }
+                }
+            });
+            
+            // 创建输入框
+            setTimeout(() => {
+                const dialogContent = document.querySelector('.van-dialog__content');
+                if (dialogContent) {
+                    const inputHtml = `
+                        <div style="padding: 0 16px;">
+                            <input id="nameInput" class="van-field__control" 
+                                   placeholder="请输入您的姓名" 
+                                   value="${defaultName}"
+                                   style="width: 100%; padding: 10px; margin-top: 10px; border: 1px solid #ebedf0; border-radius: 4px;">
+                        </div>
+                    `;
+                    dialogContent.innerHTML = inputHtml + dialogContent.innerHTML;
+                }
+            }, 10);
+        }
+        
+        // 提交关联请求
+        function submitLinkRequest(input, done) {
+            if (!input) {
+                vant.Toast('请输入关联码或家长账号');
+                return false;
+            }
+            
+            const studentInfo = JSON.parse(sessionStorage.getItem('studentInfo') || '{}');
+            
+            // 判断输入是关联码还是账号
+            if (input.length === 6 && /^\d+$/.test(input)) {
+                // 关联码处理
+                const linkCodeData = JSON.parse(sessionStorage.getItem('linkCode') || '{}');
+                const now = new Date().getTime();
+                
+                if (!linkCodeData.code || linkCodeData.code !== input) {
+                    vant.Toast('关联码无效');
+                    return false;
+                }
+                
+                if (linkCodeData.expiry < now) {
+                    vant.Toast('关联码已过期');
+                    return false;
+                }
+                
+                // 获取家长信息
+                const parentInfo = getParentInfoById(linkCodeData.parentId);
+                
+                // 创建关联请求
+                createLinkRequest(studentInfo, linkCodeData.parentId, parentInfo.name || '未知家长');
+                done();
+                return true;
+            } else if (input.startsWith('P') && input.length === 6) {
+                // 家长账号处理
+                const parentId = input;
+                
+                // 获取家长信息
+                const parentInfo = getParentInfoById(parentId);
+                
+                if (!parentInfo) {
+                    vant.Toast('未找到该家长账号，请确认输入正确');
+                    return false;
+                }
+                
+                createLinkRequest(studentInfo, parentId, parentInfo.name || '未知家长');
+                done();
+                return true;
+            } else {
+                vant.Toast('请输入有效的关联码或家长账号(P开头)');
+                return false;
+            }
+        }
+        
+        // 获取家长信息
+        function getParentInfoById(parentId) {
+            // 从parentInfo中获取
+            const allParentInfos = JSON.parse(sessionStorage.getItem('allParentInfos') || '[]');
+            let parentInfo = allParentInfos.find(p => p.accountId === parentId);
+            
+            // 如果找不到，创建一个默认的家长信息
+            if (!parentInfo) {
+                parentInfo = {
+                    accountId: parentId,
+                    name: '家长' + parentId.substring(1) // 使用账号ID后5位作为默认名称
+                };
+                
+                // 保存到全局家长信息列表
+                allParentInfos.push(parentInfo);
+                sessionStorage.setItem('allParentInfos', JSON.stringify(allParentInfos));
+            }
+            
+            return parentInfo;
+        }
+        
+        // 创建关联请求
+        function createLinkRequest(studentInfo, parentId, parentName) {
+            const linkRequest = {
+                studentId: studentInfo.accountId,
+                studentName: studentInfo.name || '未命名学生',
+                parentId: parentId,
+                parentName: parentName,
+                requestTime: new Date().getTime()
+            };
+            
+            // 保存关联请求
+            const requests = JSON.parse(sessionStorage.getItem('linkRequests') || '[]');
+            
+            // 检查是否已存在相同请求
+            const existingRequest = requests.find(req => 
+                req.studentId === linkRequest.studentId && 
+                req.parentId === linkRequest.parentId
+            );
+            
+            if (existingRequest) {
+                vant.Toast('您已发送过关联请求，请等待家长确认');
+                return;
+            }
+            
+            requests.push(linkRequest);
+            sessionStorage.setItem('linkRequests', JSON.stringify(requests));
+            
+            // 更新状态
+            const studentLinkStatus = {
+                pendingParentId: parentId,
+                pendingParentName: parentName,
+                requestTime: new Date().getTime()
+            };
+            sessionStorage.setItem('studentLinkStatus', JSON.stringify(studentLinkStatus));
+            
+            vant.Toast.success(`关联请求已发送给 ${parentName}，等待确认`);
+        }
+        
+        // 初始化设置选项卡
+        function initSettingsTab() {
+            new Vue({
+                el: '#parentLinkSection',
+                data: {
+                    linkError: '',
+                    linkedParent: null,
+                    linkPending: false,
+                    studentName: '',
+                    pendingParentName: ''
+                },
+                created() {
+                    // 加载学生信息
+                    const studentInfo = JSON.parse(sessionStorage.getItem('studentInfo') || '{}');
+                    this.studentName = studentInfo.name || studentInfo.accountId || '';
+                    
+                    // 检查是否已关联家长
+                    this.checkParentLink();
+                },
+                methods: {
+                    requestLink() {
+                        // 检查是否设置了姓名
+                        if (!this.studentName || this.studentName.trim().length === 0) {
+                            vant.Toast('请先设置您的姓名');
+                            return;
+                        }
+                        
+                        // 显示关联请求对话框
+                        showLinkRequestDialog();
+                    },
+                    checkParentLink() {
+                        // 检查是否有待确认的请求
+                        const studentLinkStatus = JSON.parse(sessionStorage.getItem('studentLinkStatus') || '{}');
+                        
+                        // 首先检查是否已经有关联记录
+                        const studentInfo = JSON.parse(sessionStorage.getItem('studentInfo') || '{}');
+                        const relatedStudents = JSON.parse(sessionStorage.getItem('relatedStudents') || '[]');
+                        
+                        // 查找关联记录
+                        const relatedRecord = relatedStudents.find(student => 
+                            student.id === studentInfo.accountId
+                        );
+                        
+                        if (relatedRecord) {
+                            // 已关联，直接显示关联信息
+                            this.linkedParent = {
+                                id: relatedRecord.parentId,
+                                name: relatedRecord.parentName || '家长'
+                            };
+                            this.linkPending = false;
+                            
+                            // 保存关联状态
+                            if (!studentInfo.linkedParent) {
+                                studentInfo.linkedParent = this.linkedParent;
+                                sessionStorage.setItem('studentInfo', JSON.stringify(studentInfo));
+                            }
+                            
+                            return;
+                        }
+                        
+                        // 如果没有关联记录，检查是否有待确认请求
+                        if (studentLinkStatus.pendingParentId) {
+                            this.linkPending = true;
+                            this.pendingParentName = studentLinkStatus.pendingParentName || '未知家长';
+                            
+                            // 检查是否已被确认
+                            const isConfirmed = relatedStudents.some(student => 
+                                student.id === studentInfo.accountId
+                            );
+                            
+                            if (isConfirmed) {
+                                // 关联已确认
+                                this.linkedParent = {
+                                    id: studentLinkStatus.pendingParentId,
+                                    name: studentLinkStatus.pendingParentName || '家长'
+                                };
+                                this.linkPending = false;
+                                
+                                // 保存关联状态到学生信息中
+                                studentInfo.linkedParent = this.linkedParent;
+                                sessionStorage.setItem('studentInfo', JSON.stringify(studentInfo));
+                                
+                                // 清除待确认状态
+                                delete studentLinkStatus.pendingParentId;
+                                delete studentLinkStatus.pendingParentName;
+                                sessionStorage.setItem('studentLinkStatus', JSON.stringify(studentLinkStatus));
+                            }
+                        } else {
+                            // 检查学生信息中是否已保存关联状态
+                            if (studentInfo.linkedParent) {
+                                this.linkedParent = studentInfo.linkedParent;
+                                this.linkPending = false;
+                            }
+                        }
+                    },
+                    saveStudentInfo() {
+                        if (!this.studentName || this.studentName.trim().length === 0) {
+                            vant.Toast('请输入有效的姓名');
+                            return;
+                        }
+                        
+                        // 保存学生信息
+                        const studentInfo = JSON.parse(sessionStorage.getItem('studentInfo') || '{}');
+                        studentInfo.name = this.studentName.trim();
+                        sessionStorage.setItem('studentInfo', JSON.stringify(studentInfo));
+                        
+                        // 更新显示
+                        const nameDisplayEl = document.getElementById('studentNameDisplay');
+                        if (nameDisplayEl) nameDisplayEl.textContent = this.studentName;
+                        
+                        // 更新全局学生信息列表
+                        const allStudentInfos = JSON.parse(sessionStorage.getItem('allStudentInfos') || '[]');
+                        const existingIndex = allStudentInfos.findIndex(s => s.accountId === studentInfo.accountId);
+                        
+                        if (existingIndex === -1) {
+                            allStudentInfos.push(studentInfo);
+                        } else {
+                            allStudentInfos[existingIndex] = studentInfo;
+                        }
+                        
+                        sessionStorage.setItem('allStudentInfos', JSON.stringify(allStudentInfos));
+                        
+                        vant.Toast.success('姓名已保存');
+                    }
+                }
+            });
+        }
+        
+        // 设置文件上传功能
+        function setupFileUpload() {
+            const fileInput = document.getElementById('fileInput');
+            const selectFilesBtn = document.getElementById('selectFilesBtn');
+            const previewContainer = document.getElementById('previewContainer');
+            
+            // 点击按钮时触发文件选择
+            selectFilesBtn.addEventListener('click', function() {
+                fileInput.click();
+            });
+            
+            // 监听文件选择变化
+            fileInput.addEventListener('change', function(event) {
+                const files = event.target.files;
+                if (!files || files.length === 0) return;
+                
+                // 清空预览区域
+                previewContainer.innerHTML = '';
+                
+                // 清空已上传文件数组
+                appData.uploadedFiles = [];
+                
+                // 处理每个选择的文件
+                for (let i = 0; i < files.length; i++) {
+                    const file = files[i];
+                    
+                    // 验证文件类型
+                    const fileName = file.name.toLowerCase();
+                    const isValidType = fileName.endsWith('.jpg') || 
+                                       fileName.endsWith('.jpeg') || 
+                                       fileName.endsWith('.png') || 
+                                       fileName.endsWith('.mp4');
+                    
+                    if (!isValidType) {
+                        vant.Toast('只支持 .jpg, .jpeg, .png, .mp4 格式的文件');
+                        continue;
+                    }
+                    
+                    // 创建文件预览
+                    const previewItem = document.createElement('div');
+                    previewItem.className = 'preview-item';
+                    
+                    // 创建预览内容
+                    const isImage = file.type.indexOf('image') !== -1;
+                    const isVideo = file.type.indexOf('video') !== -1;
+                    
+                    // 创建文件读取器来获取文件内容
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const fileContent = e.target.result;
+                        
+                        // 创建预览元素
+                        if (isImage) {
+                            const img = document.createElement('img');
+                            img.src = fileContent;
+                            img.className = 'preview-image';
+                            previewItem.appendChild(img);
+                        } else if (isVideo) {
+                            const video = document.createElement('video');
+                            video.src = fileContent;
+                            video.className = 'preview-video';
+                            video.controls = true;
+                            previewItem.appendChild(video);
+                        } else {
+                            const icon = document.createElement('div');
+                            icon.className = 'file-icon';
+                            icon.textContent = '📄';
+                            previewItem.appendChild(icon);
+                        }
+                        
+                        // 创建文件名显示
+                        const nameElement = document.createElement('div');
+                        nameElement.className = 'file-name';
+                        nameElement.textContent = file.name.length > 15 ? 
+                            file.name.substring(0, 12) + '...' : file.name;
+                        previewItem.appendChild(nameElement);
+                        
+                        // 创建删除按钮
+                        const deleteBtn = document.createElement('button');
+                        deleteBtn.className = 'delete-btn';
+                        deleteBtn.textContent = '×';
+                        deleteBtn.addEventListener('click', function() {
+                            // 从预览中移除
+                            previewContainer.removeChild(previewItem);
+                            
+                            // 从上传文件数组中移除
+                            const fileIndex = appData.uploadedFiles.findIndex(f => f.name === file.name);
+                            if (fileIndex !== -1) {
+                                appData.uploadedFiles.splice(fileIndex, 1);
+                            }
+                            
+                            // 更新文件状态显示
+                            updateFileStatus();
+                            
+                            console.log('删除后的文件列表:', appData.uploadedFiles);
+                        });
+                        previewItem.appendChild(deleteBtn);
+                        
+                        // 添加到预览容器
+                        previewContainer.appendChild(previewItem);
+                        
+                        // 保存文件信息到上传文件数组
+                        appData.uploadedFiles.push({
+                            name: file.name,
+                            type: file.type,
+                            isImage: isImage,
+                            isVideo: isVideo,
+                            content: fileContent,
+                            url: fileContent
+                        });
+                        
+                        // 更新文件状态显示
+                        updateFileStatus();
+                        
+                        console.log('当前文件列表:', appData.uploadedFiles);
+                    };
+                    
+                    // 读取文件内容
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+        
+        // 更新文件状态显示
+        function updateFileStatus() {
+            const fileStatus = document.getElementById('fileStatus');
+            if (appData.uploadedFiles && appData.uploadedFiles.length > 0) {
+                fileStatus.textContent = `已上传 ${appData.uploadedFiles.length} 个文件`;
+                fileStatus.classList.add('has-files');
+            } else {
+                fileStatus.textContent = '未上传文件';
+                fileStatus.classList.remove('has-files');
+            }
+        }
+        
+        // 初始化组件
+        function initComponents() {
+            // 科目选择器
+            const SubjectPicker = new Vue({
+                el: '#subjectPicker',
+                data: {
+                    showPicker: false,
+                    columns: subjects,
+                    selectedText: '请选择科目'
+                },
+                methods: {
+                    onConfirm(value) {
+                        appData.selectedSubject = value;
+                        this.selectedText = `已选择: ${value.text}`;
+                        this.showPicker = false;
+                    },
+                    onCancel() {
+                        this.showPicker = false;
+                    },
+                    showSubjectPicker() {
+                        this.showPicker = true;
+                    }
+                },
+                template: `
+                    <div>
+                        <div class="van-cell van-cell--clickable" @click="showSubjectPicker">
+                            <div class="van-cell__title">{{selectedText}}</div>
+                            <div class="van-cell__right-icon">
+                                <i class="van-icon van-icon-arrow"></i>
+                            </div>
+                        </div>
+                        <van-popup v-model="showPicker" position="bottom">
+                            <van-picker
+                                show-toolbar
+                                :columns="columns"
+                                @confirm="onConfirm"
+                                @cancel="onCancel"
+                            />
+                        </van-popup>
+                    </div>
+                `
+            });
+            
+            // 内容类型选择器
+            const TypePicker = new Vue({
+                el: '#typePicker',
+                data: {
+                    showPicker: false,
+                    columns: contentTypes,
+                    selectedText: '请选择内容类型'
+                },
+                methods: {
+                    onConfirm(value) {
+                        appData.selectedType = value;
+                        this.selectedText = `已选择: ${value.text}`;
+                        this.showPicker = false;
+                    },
+                    onCancel() {
+                        this.showPicker = false;
+                    },
+                    showTypePicker() {
+                        this.showPicker = true;
+                    }
+                },
+                template: `
+                    <div>
+                        <div class="van-cell van-cell--clickable" @click="showTypePicker">
+                            <div class="van-cell__title">{{selectedText}}</div>
+                            <div class="van-cell__right-icon">
+                                <i class="van-icon van-icon-arrow"></i>
+                            </div>
+                        </div>
+                        <van-popup v-model="showPicker" position="bottom">
+                            <van-picker
+                                show-toolbar
+                                :columns="columns"
+                                @confirm="onConfirm"
+                                @cancel="onCancel"
+                            />
+                        </van-popup>
+                    </div>
+                `
+            });
+            
+            // 备注输入框
+            const RemarkField = new Vue({
+                el: '#remarkField',
+                data: {
+                    remark: ''
+                },
+                methods: {
+                    getValue() {
+                        return this.remark;
+                    },
+                    setValue(value) {
+                        this.remark = value;
+                    }
+                },
+                template: `
+                    <van-field
+                        v-model="remark"
+                        type="textarea"
+                        placeholder="请输入备注信息（可选）"
+                        rows="3"
+                        maxlength="200"
+                        show-word-limit
+                    />
+                `
+            });
+            
+            // 提交按钮 - 使用普通按钮替代Vue组件
+            const submitBtn = document.createElement('button');
+            submitBtn.className = 'van-button van-button--primary van-button--large';
+            submitBtn.style.width = '100%';
+            submitBtn.style.marginTop = '16px';
+            submitBtn.innerHTML = '提交作业';
+            
+            // 调试按钮
+            const debugBtn = document.createElement('button');
+            debugBtn.className = 'van-button van-button--default van-button--small';
+            debugBtn.style.marginTop = '8px';
+            debugBtn.style.width = '100%';
+            debugBtn.innerHTML = '检查文件状态';
+            debugBtn.onclick = function(e) {
+                e.preventDefault();
+                console.log('当前文件列表:', appData.uploadedFiles);
+                vant.Toast(`当前已上传 ${appData.uploadedFiles.length} 个文件`);
+                updateFileStatus();
+            };
+            
+            // 直接挂载到DOM
+            const submitContainer = document.getElementById('submitBtn');
+            submitContainer.appendChild(submitBtn);
+            submitContainer.appendChild(debugBtn);
+            
+            // 添加点击事件
+            submitBtn.addEventListener('click', function(e) {
+                e.preventDefault(); // 防止表单提交
+                
+                console.log("提交按钮被点击");
+                console.log("当前选择的科目:", appData.selectedSubject);
+                console.log("当前选择的类型:", appData.selectedType);
+                console.log("当前上传的文件:", appData.uploadedFiles);
+                
+                try {
+                    // 验证表单
+                    if (!appData.selectedSubject || !appData.selectedSubject.value) {
+                        console.error('科目未选择');
+                        vant.Toast('请选择科目');
+                        return;
+                    }
+                    
+                    if (!appData.selectedType || !appData.selectedType.value) {
+                        console.error('内容类型未选择');
+                        vant.Toast('请选择内容类型');
+                        return;
+                    }
+                    
+                    // 验证文件上传
+                    if (!appData.uploadedFiles || appData.uploadedFiles.length === 0) {
+                        console.error('未上传文件', appData.uploadedFiles);
+                        vant.Toast('请上传至少一个文件');
+                        return;
+                    }
+                    
+                    // 获取学生信息
+                    const studentInfo = JSON.parse(sessionStorage.getItem('studentInfo') || '{}');
+                    if (!studentInfo.name) {
+                        vant.Dialog.confirm({
+                            title: '设置姓名',
+                            message: '请先设置您的姓名后再提交作业',
+                            confirmButtonText: '去设置',
+                            showCancelButton: false
+                        }).then(() => {
+                            showNameSettingDialog();
+                        });
+                        return;
+                    }
+                    
+                    // 获取备注 - 直接从DOM获取
+                    const remarkField = document.querySelector('#remarkField .van-field__control');
+                    const remark = remarkField ? remarkField.value : '';
+                    console.log('获取到的备注:', remark);
+                    
+                    // 创建一个提交记录 - 使用用户选择的科目和类型
+                    const submissionData = {
+                        id: 'sub_' + new Date().getTime() + '_' + Math.floor(Math.random() * 1000),
+                        subject: appData.selectedSubject.text,
+                        type: appData.selectedType.text,
+                        remark: remark || '',
+                        status: 'pending',
+                        timestamp: new Date().getTime(),
+                        files: JSON.parse(JSON.stringify(appData.uploadedFiles)),
+                        studentId: studentInfo.accountId || '',
+                        studentName: studentInfo.name || '未命名学生'
+                    };
+                    
+                    console.log('提交数据:', submissionData);
+                    
+                    // 直接使用数组存储到sessionStorage
+                    let submissions = [];
+                    try {
+                        const existingSubmissions = sessionStorage.getItem('submissions');
+                        if (existingSubmissions) {
+                            submissions = JSON.parse(existingSubmissions);
+                        }
+                    } catch (error) {
+                        console.error('读取提交记录失败:', error);
+                    }
+                    
+                    // 添加新记录
+                    submissions.unshift(submissionData);
+                    
+                    // 保存回sessionStorage
+                    sessionStorage.setItem('submissions', JSON.stringify(submissions));
+                    console.log('已保存到sessionStorage');
+                    
+                    // 显示提交成功消息
+                    vant.Toast.success({
+                        message: '提交成功！等待家长审核',
+                        position: 'bottom'
+                    });
+                    
+                    // 重置表单
+                    resetForm();
+                    
+                    // 刷新历史记录
+                    loadSubmissions();
+                    
+                    // 更新统计数据
+                    updateStats();
+                } catch (error) {
+                    console.error('提交过程中出错:', error);
+                    vant.Toast.fail('提交失败: ' + error.message);
+                }
+            });
+            
+            // 初始加载历史记录
+            loadSubmissions();
+            
+            // 保存组件引用
+            window.SubjectPicker = SubjectPicker;
+            window.TypePicker = TypePicker;
+            window.RemarkField = RemarkField;
+        }
+        
+        // 重置表单
+        function resetForm() {
+            appData.selectedSubject = null;
+            appData.selectedType = null;
+            appData.uploadedFiles = [];
+            
+            // 重置显示
+            if (window.SubjectPicker) {
+                window.SubjectPicker.selectedText = '请选择科目';
+            }
+            
+            if (window.TypePicker) {
+                window.TypePicker.selectedText = '请选择内容类型';
+            }
+            
+            // 清空文件预览
+            const previewContainer = document.getElementById('previewContainer');
+            if (previewContainer) {
+                previewContainer.innerHTML = '';
+            }
+            
+            // 清空文件输入
+            const fileInput = document.getElementById('fileInput');
+            if (fileInput) {
+                fileInput.value = '';
+            }
+            
+            // 清空备注
+            if (window.RemarkField) {
+                window.RemarkField.remark = '';
+            }
+            
+            // 更新文件状态显示
+            updateFileStatus();
+            
+            console.log('表单已重置');
+        }
+        
+        // 加载用户数据
+        function loadUserData() {
+            updateStats();
+            
+            // 加载学生信息
+            const studentInfo = JSON.parse(sessionStorage.getItem('studentInfo') || '{}');
+            appData.studentInfo = studentInfo;
+        }
+        
+        // 更新统计数据
+        function updateStats() {
+            try {
+                const submissions = JSON.parse(sessionStorage.getItem('submissions') || '[]');
+                const approvedSubmissions = submissions.filter(item => item.status === 'approved');
+                
+                // 计算总积分
+                const totalPoints = approvedSubmissions.reduce((sum, item) => sum + (item.points || 0), 0);
+                
+                // 计算本月积分
+                const now = new Date();
+                const currentMonth = now.getMonth();
+                const currentYear = now.getFullYear();
+                
+                const monthlyPoints = approvedSubmissions.reduce((sum, item) => {
+                    const date = new Date(item.timestamp);
+                    if (date.getMonth() === currentMonth && date.getFullYear() === currentYear) {
+                        return sum + (item.points || 0);
+                    }
+                    return sum;
+                }, 0);
+                
+                // 提交次数
+                const submissionCount = submissions.length;
+                
+                // 更新显示 - 添加安全检查
+                const totalPointsEl = document.getElementById('totalPoints');
+                if (totalPointsEl) totalPointsEl.textContent = totalPoints;
+                
+                const monthlyPointsEl = document.getElementById('monthlyPoints');
+                if (monthlyPointsEl) monthlyPointsEl.textContent = monthlyPoints;
+                
+                const submissionCountEl = document.getElementById('submissionCount');
+                if (submissionCountEl) submissionCountEl.textContent = submissionCount;
+            } catch (error) {
+                console.error('更新统计数据失败:', error);
+            }
+        }
+        
+        // 格式化日期为 YYYY-MM-DD HH:MM 格式
+        function formatDate(timestamp) {
+            const date = new Date(timestamp);
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            
+            return `${year}-${month}-${day} ${hours}:${minutes}`;
+        }
+        
+        // 从sessionStorage加载提交记录
+        function loadSubmissions() {
+            console.log('从sessionStorage加载提交记录...');
+            
+            try {
+                const historyList = document.getElementById('historyList');
+                if (!historyList) {
+                    console.error('找不到historyList元素');
+                    return;
+                }
+                
+                // 获取提交记录
+                let submissions = [];
+                const existingSubmissions = sessionStorage.getItem('submissions');
+                
+                if (existingSubmissions) {
+                    submissions = JSON.parse(existingSubmissions);
+                    console.log('从sessionStorage获取的提交记录:', submissions);
+                } else {
+                    console.log('sessionStorage中没有提交记录');
+                }
+                
+                // 渲染提交记录
+                renderSubmissions(submissions);
+                
+                // 更新统计数据
+                updateStats();
+            } catch (error) {
+                console.error('加载提交记录失败:', error);
+            }
+        }
+        
+        // 渲染提交记录
+        function renderSubmissions(submissions) {
+            const historyList = document.getElementById('historyList');
+            historyList.innerHTML = '';
+            
+            if (submissions.length === 0) {
+                historyList.innerHTML = '<div class="van-empty"><p>暂无提交记录</p></div>';
+                return;
+            }
+            
+            let html = '';
+            for (const item of submissions) {
+                const subject = item.subject;
+                const type = item.type;
+                const status = item.status || 'pending';
+                const points = item.points || 0;
+                const submitTime = formatDate(item.timestamp);
+                const reviewerRole = item.reviewerRole || '';
+                
+                let statusText = '待审核';
+                let statusClass = 'status-pending';
+                
+                if (status === 'approved') {
+                    statusText = '已通过 +' + points + '分';
+                    statusClass = 'status-approved';
+                } else if (status === 'rejected') {
+                    statusText = '已打回';
+                    statusClass = 'status-rejected';
+                }
+                
+                // 显示文件信息
+                let fileInfo = '';
+                if (item.files && item.files.length > 0) {
+                    fileInfo = `
+                        <div class="van-cell__label">
+                            已提交 ${item.files.length} 个文件
+                        </div>
+                    `;
+                }
+                
+                // 显示评分者信息
+                let reviewerInfo = '';
+                if (reviewerRole && (status === 'approved' || status === 'rejected')) {
+                    reviewerInfo = `
+                        <div class="van-cell__label" style="color: #1989fa;">
+                            评分者：${reviewerRole}
+                        </div>
+                    `;
+                }
+                
+                html += `
+                    <div class="van-cell-group" style="margin-bottom: 8px;">
+                        <div class="van-cell">
+                            <div class="van-cell__title">
+                                <div>${subject} - ${type}</div>
+                                <div class="van-cell__label">${submitTime}</div>
+                                ${fileInfo}
+                                ${reviewerInfo}
+                            </div>
+                            <div class="van-cell__value">
+                                <span class="${statusClass}">${statusText}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            historyList.innerHTML = html;
+            console.log('提交记录渲染完成');
+        }
+    </script>
+</body>
+</html> 

@@ -1,0 +1,2077 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>家长工作台 - 成绩管理系统</title>
+    <!-- 引入样式文件 -->
+    <link rel="stylesheet" href="https://fastly.jsdelivr.net/npm/vant@2.12/lib/index.css"/>
+    <!-- 引入 Vue 和 Vant 的 JS 文件 -->
+    <script src="https://fastly.jsdelivr.net/npm/vue@2.6/dist/vue.min.js"></script>
+    <script src="https://fastly.jsdelivr.net/npm/vant@2.12/lib/vant.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.0/dist/echarts.min.js"></script>
+    <style>
+        body {
+            background-color: #f7f8fa;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Segoe UI, Arial, Roboto, 'PingFang SC', 'miui', 'Hiragino Sans GB', 'Microsoft Yahei', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .page {
+            padding: 12px;
+            padding-bottom: 50px;
+        }
+        .card {
+            margin-bottom: 12px;
+        }
+        .history-item {
+            margin-bottom: 8px;
+            border-bottom: 1px solid #ebedf0;
+            padding-bottom: 8px;
+        }
+        .history-item:last-child {
+            border-bottom: none;
+        }
+        .point-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            background-color: #1989fa;
+            color: white;
+            border-radius: 12px;
+            font-size: 12px;
+            margin-left: 5px;
+        }
+        .status-pending {
+            color: #ff976a;
+        }
+        .status-approved {
+            color: #07c160;
+        }
+        .status-rejected {
+            color: #ee0a24;
+        }
+        .file-preview {
+            width: 100%;
+            max-height: 200px;
+            object-fit: contain;
+            margin: 10px 0;
+            border: 1px solid #ebedf0;
+            border-radius: 4px;
+        }
+        .file-item {
+            padding: 8px;
+            background-color: #f2f3f5;
+            border-radius: 4px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+        }
+        .file-icon {
+            margin-right: 8px;
+            color: #969799;
+        }
+        .stepper-container {
+            display: flex;
+            align-items: center;
+            margin: 16px 0;
+        }
+        .stepper-label {
+            margin-right: 12px;
+            min-width: 70px;
+        }
+        .points-input {
+            flex: 1;
+        }
+        .no-preview {
+            text-align: center;
+            padding: 20px;
+            background-color: #f2f3f5;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .no-preview p {
+            margin-top: 8px;
+            color: #969799;
+        }
+        video.file-preview {
+            width: 100%;
+            max-height: none;
+            background-color: #000;
+        }
+        .link-code {
+            font-size: 32px;
+            font-weight: bold;
+            color: #1989fa;
+            margin: 20px 0;
+            letter-spacing: 5px;
+        }
+        .student-management {
+            padding: 16px 0;
+        }
+        .action-buttons {
+            padding: 0 16px;
+        }
+        .info-card {
+            margin-top: 12px;
+            background-color: #fff;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .student-name-title {
+            font-weight: bold;
+            font-size: 16px;
+            color: #323233;
+            margin-bottom: 4px;
+        }
+        .submission-time {
+            font-size: 12px;
+            color: #969799;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <van-nav-bar
+            title="家长工作台"
+            left-text="返回"
+            left-arrow
+            @click-left="onClickLeft"
+            fixed
+        ></van-nav-bar>
+
+        <div class="page" style="padding-top: 56px;">
+            <!-- 家长信息卡片 -->
+            <van-cell-group class="info-card" style="margin-bottom: 12px;">
+                <van-cell title="家长账号">
+                    <template #right-icon>
+                        <span style="font-weight: bold;">{{ parentAccountId }}</span>
+                    </template>
+                </van-cell>
+                <van-cell title="家长角色" @click="showRoleSettingDialog" is-link>
+                    <template #right-icon>
+                        <span>{{ parentRole }}</span>
+                    </template>
+                </van-cell>
+            </van-cell-group>
+            
+            <van-tabs v-model="activeTab" sticky>
+                <van-tab title="待审核">
+                    <van-empty v-if="pendingSubmissions.length === 0" description="暂无待审核内容"></van-empty>
+                    <div v-else>
+                        <van-card
+                            v-for="(item, index) in pendingSubmissions"
+                            :key="index"
+                            :desc="item.subject + ' - ' + item.type"
+                            class="card"
+                        >
+                            <template #title>
+                                <div class="student-name-title">{{ item.studentName || '未知学生' }}</div>
+                                <div class="submission-time">提交时间: {{ formatDate(item.timestamp) }}</div>
+                            </template>
+                            <template #tags>
+                                <van-tag type="warning">待审核</van-tag>
+                                <span style="margin-left: 5px; color: #1989fa;">评分者: {{ parentRole }}</span>
+                            </template>
+                            <template #footer>
+                                <van-button size="small" type="primary" @click="showReviewDialog(item)">审核</van-button>
+                            </template>
+                        </van-card>
+                    </div>
+                </van-tab>
+                <van-tab title="已审核">
+                    <van-empty v-if="reviewedSubmissions.length === 0" description="暂无已审核内容"></van-empty>
+                    <div v-else>
+                        <van-card
+                            v-for="(item, index) in reviewedSubmissions"
+                            :key="index"
+                            :desc="item.subject + ' - ' + item.type"
+                            class="card"
+                        >
+                            <template #title>
+                                <div class="student-name-title">{{ item.studentName || '未知学生' }}</div>
+                                <div class="submission-time">提交时间: {{ formatDate(item.timestamp) }}</div>
+                            </template>
+                            <template #tags>
+                                <van-tag :type="item.status === 'approved' ? 'success' : 'danger'">
+                                    {{ item.status === 'approved' ? '已通过' : '已打回' }}
+                                </van-tag>
+                                <span v-if="item.status === 'approved'" class="point-badge">+{{ item.points }}</span>
+                                <span style="margin-left: 5px; color: #1989fa;">{{ item.reviewerRole || parentRole }}</span>
+                            </template>
+                            <template #footer>
+                                <van-button size="small" plain @click="viewSubmissionDetail(item)">查看详情</van-button>
+                            </template>
+                        </van-card>
+                    </div>
+                </van-tab>
+                <van-tab title="积分统计">
+                    <div style="padding: 16px 0;">
+                        <!-- 学生选择器 -->
+                        <van-cell-group title="选择学生">
+                            <van-field
+                                v-model="selectedStudentName"
+                                readonly
+                                label="学生"
+                                placeholder="请选择学生"
+                                right-icon="arrow-down"
+                                @click="showStudentSelector = true"
+                            />
+                        </van-cell-group>
+                        
+                        <!-- 时间筛选 -->
+                        <van-cell-group title="时间筛选" style="margin-top: 12px;">
+                            <van-cell title="时间范围" is-link @click="showDatePicker = true">
+                                <template #right-icon>
+                                    <span>{{ dateRangeText }}</span>
+                                </template>
+                            </van-cell>
+                        </van-cell-group>
+                        
+                        <!-- 总积分卡片 -->
+                        <div class="stats-card" style="margin-top: 16px; background-color: #1989fa; color: white; padding: 16px; border-radius: 8px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span>总积分</span>
+                                <span style="font-size: 24px; font-weight: bold;">{{ filteredTotalPoints }}</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-top: 12px;">
+                                <div>
+                                    <div style="font-size: 12px;">本月积分</div>
+                                    <div style="font-size: 18px; font-weight: bold;">{{ filteredMonthlyPoints }}</div>
+                                </div>
+                                <div>
+                                    <div style="font-size: 12px;">提交次数</div>
+                                    <div style="font-size: 18px; font-weight: bold;">{{ filteredSubmissions.length }}</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 科目统计 -->
+                        <van-cell-group title="科目统计" style="margin-top: 16px;">
+                            <div style="padding: 16px; background-color: white; border-radius: 8px;">
+                                <div id="subjectChart" style="width: 100%; height: 300px;"></div>
+                            </div>
+                        </van-cell-group>
+                        
+                        <!-- 类型统计 -->
+                        <van-cell-group title="类型统计" style="margin-top: 16px;">
+                            <div style="padding: 16px; background-color: white; border-radius: 8px;">
+                                <div id="typeChart" style="width: 100%; height: 300px;"></div>
+                            </div>
+                        </van-cell-group>
+                        
+                        <!-- 积分趋势 -->
+                        <van-cell-group title="积分趋势" style="margin-top: 16px;">
+                            <div style="padding: 16px; background-color: white; border-radius: 8px;">
+                                <div id="trendChart" style="width: 100%; height: 300px;"></div>
+                            </div>
+                        </van-cell-group>
+                        
+                        <!-- 积分明细 -->
+                        <van-cell-group title="积分明细" style="margin-top: 16px;">
+                            <van-empty v-if="filteredPointLogs.length === 0" description="暂无积分记录"></van-empty>
+                            <div v-else>
+                                <div v-for="(log, index) in filteredPointLogs" :key="index" class="history-item">
+                                    <van-cell :title="log.subject + ' - ' + log.type" 
+                                             :label="formatDate(log.timestamp) + (log.remark ? ' · ' + log.remark : '')">
+                                        <template #right-icon>
+                                            <span :style="{ color: log.isNegative ? '#ee0a24' : '#07c160' }">{{ log.pointText }}</span>
+                                        </template>
+                                    </van-cell>
+                                </div>
+                            </div>
+                        </van-cell-group>
+                    </div>
+                    
+                    <!-- 学生选择器弹窗 -->
+                    <van-popup v-model="showStudentSelector" position="bottom">
+                        <van-picker
+                            show-toolbar
+                            :columns="studentOptions"
+                            @confirm="onStudentSelect"
+                            @cancel="showStudentSelector = false"
+                            value-key="name"
+                        />
+                    </van-popup>
+                    
+                    <!-- 日期选择器弹窗 -->
+                    <van-popup v-model="showDatePicker" position="bottom">
+                        <van-picker
+                            show-toolbar
+                            :columns="dateRangeOptions"
+                            @confirm="onDateRangeSelect"
+                            @cancel="showDatePicker = false"
+                        />
+                    </van-popup>
+                </van-tab>
+                <van-tab title="学生管理">
+                    <div class="student-management">
+                        <van-cell-group title="关联学生">
+                            <van-cell v-for="(student, index) in relatedStudents" :key="index"
+                                :title="student.name"
+                                :label="'关联时间: ' + formatDate(student.linkedTime)"
+                                is-link
+                                @click="viewStudentDetail(student)">
+                                <template #right-icon>
+                                    <van-tag type="primary">{{ student.status }}</van-tag>
+                                </template>
+                            </van-cell>
+                            
+                            <van-empty v-if="relatedStudents.length === 0" description="暂无关联学生"></van-empty>
+                        </van-cell-group>
+
+                        <div class="action-buttons" style="margin-top: 20px;">
+                            <van-button type="primary" block @click="showLinkCodeDialog">生成关联码</van-button>
+                            <van-button type="default" block style="margin-top: 10px;" @click="showAddStudentDialog">添加学生账号</van-button>
+                            <van-button type="info" block style="margin-top: 10px;" @click="showAdjustPointsDialog">调整学生积分</van-button>
+                        </div>
+                        
+                        <van-cell-group title="家长角色设置" style="margin-top: 20px;">
+                            <van-cell title="当前角色" is-link @click="showRoleSettingDialog">
+                                <template #right-icon>
+                                    <span>{{ parentRole }}</span>
+                                </template>
+                            </van-cell>
+                        </van-cell-group>
+                        
+                        <van-cell-group title="积分规则设置" style="margin-top: 20px;">
+                            <van-cell title="默认积分奖励" is-link @click="showPointSettingDialog">
+                                <template #right-icon>
+                                    <span>{{ defaultPoints }}分</span>
+                                </template>
+                            </van-cell>
+                            <van-cell title="科目积分倍率" is-link @click="showSubjectMultiplierDialog">
+                                <template #right-icon>
+                                    <span>已设置{{ Object.keys(subjectMultipliers).length }}个</span>
+                                </template>
+                            </van-cell>
+                        </van-cell-group>
+                        
+                        <van-cell-group title="关联请求" style="margin-top: 20px;">
+                            <van-cell v-for="(request, index) in linkRequests" :key="index"
+                                :title="request.studentName"
+                                :label="'请求时间: ' + formatDate(request.requestTime)">
+                                <template #right-icon>
+                                    <div>
+                                        <van-button size="mini" type="success" @click="approveRequest(request, index)">同意</van-button>
+                                        <van-button size="mini" type="danger" style="margin-left: 5px;" @click="rejectRequest(request, index)">拒绝</van-button>
+                                    </div>
+                                </template>
+                            </van-cell>
+                            
+                            <van-empty v-if="linkRequests.length === 0" description="暂无关联请求"></van-empty>
+                        </van-cell-group>
+                    </div>
+                </van-tab>
+            </van-tabs>
+        </div>
+
+        <!-- 审核弹窗 -->
+        <van-dialog
+            v-model="showReview"
+            title="审核提交"
+            show-cancel-button
+            @confirm="confirmReview"
+            closeOnClickOverlay
+            :close-on-click-overlay="false"
+        >
+            <div style="padding: 20px 16px;">
+                <p><strong>学生:</strong> {{ currentItem.studentName || '未知学生' }}</p>
+                <p><strong>科目:</strong> {{ currentItem.subject }}</p>
+                <p><strong>类型:</strong> {{ currentItem.type }}</p>
+                <p v-if="currentItem.remark"><strong>备注:</strong> {{ currentItem.remark }}</p>
+                <p><strong>提交时间:</strong> {{ formatDate(currentItem.timestamp) }}</p>
+                <p><strong>评分者:</strong> {{ parentRole }}</p>
+                
+                <!-- 文件预览 -->
+                <div v-if="currentItem.files && currentItem.files.length > 0">
+                    <van-divider>提交的文件</van-divider>
+                    <div class="file-item" v-for="(file, index) in currentItem.files" :key="index">
+                        <van-icon :name="getFileIcon(file)" class="file-icon" />
+                        <span>{{ file.name }}</span>
+                    </div>
+                    <!-- 实际文件预览 -->
+                    <div v-for="(file, index) in currentItem.files" :key="'preview-'+index">
+                        <!-- 图片预览 -->
+                        <img v-if="file.isImage && file.url" :src="file.url" class="file-preview" :alt="file.name" />
+                        <!-- 视频预览 -->
+                        <video v-else-if="file.isVideo && file.url" :src="file.url" class="file-preview" controls></video>
+                        <!-- 无法预览的文件 -->
+                        <div v-else class="no-preview">
+                            <van-icon name="description" size="40" />
+                            <p>{{ file.name }}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <van-divider />
+                
+                <!-- 积分调整 -->
+                <div class="stepper-container">
+                    <span class="stepper-label">奖励积分:</span>
+                    <div class="points-input">
+                        <van-stepper 
+                            v-model="reviewPoints" 
+                            :min="0"
+                            :max="10"
+                            :step="1"
+                            input-width="50px"
+                            button-size="32px"
+                        />
+                    </div>
+                </div>
+                
+                <van-field
+                    v-model="reviewPoints"
+                    type="digit"
+                    label="（可手动设置积分）"
+                    placeholder="请输入奖励积分"
+                />
+                
+                <van-radio-group v-model="reviewStatus">
+                    <van-cell-group>
+                        <van-cell title="通过" clickable @click="reviewStatus = 'approved'">
+                            <template #right-icon>
+                                <van-radio name="approved" />
+                            </template>
+                        </van-cell>
+                        <van-cell title="打回" clickable @click="reviewStatus = 'rejected'">
+                            <template #right-icon>
+                                <van-radio name="rejected" />
+                            </template>
+                        </van-cell>
+                    </van-cell-group>
+                </van-radio-group>
+                
+                <van-field
+                    v-if="reviewStatus === 'rejected'"
+                    v-model="rejectReason"
+                    type="textarea"
+                    placeholder="请输入打回原因"
+                    rows="2"
+                    autosize
+                />
+            </div>
+        </van-dialog>
+
+        <!-- 详情弹窗 -->
+        <van-dialog
+            v-model="showDetail"
+            title="提交详情"
+            confirm-button-text="关闭"
+            :show-cancel-button="false"
+        >
+            <div style="padding: 20px 16px;">
+                <p><strong>学生:</strong> {{ currentItem.studentName || '未知学生' }}</p>
+                <p><strong>科目:</strong> {{ currentItem.subject }}</p>
+                <p><strong>类型:</strong> {{ currentItem.type }}</p>
+                <p v-if="currentItem.remark"><strong>备注:</strong> {{ currentItem.remark }}</p>
+                <p><strong>提交时间:</strong> {{ formatDate(currentItem.timestamp) }}</p>
+                <p><strong>状态:</strong> 
+                    <span :class="'status-' + currentItem.status">
+                        {{ currentItem.status === 'approved' ? '已通过' : '已打回' }}
+                    </span>
+                </p>
+                <p v-if="currentItem.status === 'approved'"><strong>奖励积分:</strong> {{ currentItem.points }}</p>
+                <p v-if="currentItem.reviewerRole"><strong>评分者:</strong> {{ currentItem.reviewerRole }}</p>
+                <p v-if="currentItem.rejectReason"><strong>打回原因:</strong> {{ currentItem.rejectReason }}</p>
+                
+                <!-- 文件预览 -->
+                <div v-if="currentItem.files && currentItem.files.length > 0">
+                    <van-divider>提交的文件</van-divider>
+                    <div class="file-item" v-for="(file, index) in currentItem.files" :key="index">
+                        <van-icon :name="getFileIcon(file)" class="file-icon" />
+                        <span>{{ file.name }}</span>
+                    </div>
+                    <!-- 实际文件预览 -->
+                    <div v-for="(file, index) in currentItem.files" :key="'preview-'+index">
+                        <!-- 图片预览 -->
+                        <img v-if="file.isImage && file.url" :src="file.url" class="file-preview" :alt="file.name" />
+                        <!-- 视频预览 -->
+                        <video v-else-if="file.isVideo && file.url" :src="file.url" class="file-preview" controls></video>
+                        <!-- 无法预览的文件 -->
+                        <div v-else class="no-preview">
+                            <van-icon name="description" size="40" />
+                            <p>{{ file.name }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </van-dialog>
+
+        <!-- 关联码弹窗 -->
+        <van-dialog
+            v-model="showLinkCode"
+            title="学生关联码"
+            confirm-button-text="关闭"
+            :show-cancel-button="false"
+        >
+            <div style="padding: 20px 16px; text-align: center;">
+                <p>请将此关联码提供给您的孩子进行账号关联</p>
+                <div class="link-code">{{ currentLinkCode }}</div>
+                <p>有效期: {{ linkCodeExpiry }}</p>
+                <van-button type="primary" @click="generateNewLinkCode">重新生成</van-button>
+                <van-button type="default" style="margin-left: 10px;" @click="copyLinkCode">复制</van-button>
+            </div>
+        </van-dialog>
+
+        <!-- 添加学生弹窗 -->
+        <van-dialog
+            v-model="showAddStudent"
+            title="添加学生"
+            show-cancel-button
+            @confirm="confirmAddStudent"
+        >
+            <div style="padding: 20px 16px;">
+                <van-field
+                    v-model="newStudent.accountId"
+                    label="学生账号"
+                    placeholder="请输入学生账号(S开头)"
+                    required
+                />
+            </div>
+        </van-dialog>
+
+        <!-- 积分设置弹窗 -->
+        <van-dialog
+            v-model="showPointSetting"
+            title="默认积分设置"
+            show-cancel-button
+            @confirm="saveDefaultPoints"
+        >
+            <div style="padding: 20px 16px;">
+                <p>设置审核通过时的默认积分奖励</p>
+                <div class="stepper-container">
+                    <span class="stepper-label">默认积分:</span>
+                    <div class="points-input">
+                        <van-stepper 
+                            v-model="defaultPoints" 
+                            :min="0"
+                            :max="1000"
+                            :step="1"
+                            input-width="50px"
+                            button-size="32px"
+                        />
+                    </div>
+                </div>
+            </div>
+        </van-dialog>
+
+        <!-- 科目倍率设置弹窗 -->
+        <van-dialog
+            v-model="showSubjectMultiplier"
+            title="科目积分倍率"
+            show-cancel-button
+            @confirm="saveSubjectMultipliers"
+        >
+            <div style="padding: 20px 16px;">
+                <p>设置不同科目的积分倍率</p>
+                <van-field
+                    v-for="(subject, index) in subjects"
+                    :key="index"
+                    :label="subject.text"
+                    type="digit"
+                    v-model="subjectMultipliers[subject.value]"
+                    placeholder="倍率"
+                />
+            </div>
+        </van-dialog>
+
+        <!-- 学生详情弹窗 -->
+        <van-dialog
+            v-model="showStudentDetail"
+            title="学生详情"
+            :show-cancel-button="false"
+        >
+            <div style="padding: 20px 16px;">
+                <van-cell-group>
+                    <van-cell title="姓名" :value="currentStudent.name"></van-cell>
+                    <van-cell title="关联时间" :value="formatDate(currentStudent.linkedTime)"></van-cell>
+                    <van-cell title="状态" :value="currentStudent.status"></van-cell>
+                    <van-cell v-if="currentStudent.note" title="备注" :value="currentStudent.note"></van-cell>
+                </van-cell-group>
+                
+                <div style="margin-top: 20px; display: flex; justify-content: space-between;">
+                    <van-button type="info" block style="margin-right: 10px;" @click="adjustStudentPoints(currentStudent)">调整积分</van-button>
+                    <van-button type="danger" block @click="unlinkStudent">解除关联</van-button>
+                </div>
+            </div>
+        </van-dialog>
+        
+        <!-- 积分调整弹窗 -->
+        <van-dialog
+            v-model="showAdjustPoints"
+            title="调整学生积分"
+            show-cancel-button
+            @confirm="manualConfirmAdjustPoints"
+            @cancel="cancelAdjustPoints"
+            :close-on-click-overlay="false"
+        >
+            <div style="padding: 20px 16px;">
+                <!-- 学生选择 -->
+                <div v-if="!adjustPointsForSpecificStudent" style="margin-bottom: 16px;">
+                    <van-field
+                        v-model="selectedAdjustStudent.name"
+                        readonly
+                        label="学生"
+                        placeholder="请选择学生"
+                        right-icon="arrow-down"
+                        @click="showAdjustStudentSelector = true"
+                        required
+                    />
+                </div>
+                
+                <div v-else style="margin-bottom: 16px;">
+                    <van-cell title="学生">
+                        <template #right-icon>
+                            <span>{{ selectedAdjustStudent.name }}</span>
+                        </template>
+                    </van-cell>
+                </div>
+                
+                <!-- 积分调整 -->
+                <div style="margin: 16px 0; background-color: #f7f8fa; padding: 16px; border-radius: 8px;">
+                    <div style="text-align: center; margin-bottom: 12px; font-weight: bold;">选择调整方式</div>
+                    <div style="display: flex; justify-content: space-between; padding: 0 16px;">
+                        <van-button 
+                            :type="adjustPointsMode === 'decrease' ? 'danger' : 'default'" 
+                            size="large" 
+                            @click="setAdjustMode('decrease')"
+                            style="width: 45%;"
+                        >减少积分</van-button>
+                        <van-button 
+                            :type="adjustPointsMode === 'increase' ? 'primary' : 'default'" 
+                            size="large" 
+                            @click="setAdjustMode('increase')"
+                            style="width: 45%;"
+                        >增加积分</van-button>
+                    </div>
+                </div>
+
+                <!-- 积分数值 -->
+                <div v-if="adjustPointsMode" style="margin: 16px 0; background-color: #f7f8fa; padding: 16px; border-radius: 8px;">
+                    <div style="text-align: center; margin-bottom: 12px; font-weight: bold;">
+                        {{ adjustPointsMode === 'increase' ? '增加积分数值' : '减少积分数值' }}
+                    </div>
+                    <div style="display: flex; align-items: center; justify-content: center;">
+                        <van-stepper 
+                            v-model="adjustPointsValue" 
+                            :min="0"
+                            :max="1000"
+                            :step="1"
+                            input-width="80px"
+                            button-size="32px"
+                        />
+                    </div>
+                </div>
+                
+                <!-- 备注 -->
+                <van-field
+                    v-model="adjustPointsRemark"
+                    type="textarea"
+                    label="备注"
+                    placeholder="可选：添加积分调整的原因"
+                    rows="2"
+                    autosize
+                />
+            </div>
+
+            <!-- 学生选择器弹窗 -->
+            <van-popup v-model="showAdjustStudentSelector" position="bottom">
+                <van-picker
+                    show-toolbar
+                    :columns="adjustStudentOptions"
+                    @confirm="onAdjustStudentSelect"
+                    @cancel="showAdjustStudentSelector = false"
+                    value-key="name"
+                />
+            </van-popup>
+        </van-dialog>
+
+        <!-- 角色设置弹窗 -->
+        <van-dialog
+            v-model="showRoleSetting"
+            title="设置家长角色"
+            show-cancel-button
+            @confirm="saveRole"
+        >
+            <div style="padding: 20px 16px;">
+                <p>选择您的角色</p>
+                <van-field
+                    v-model="selectedRole"
+                    readonly
+                    label="角色"
+                    placeholder="请选择角色"
+                    right-icon="arrow-down"
+                    @click="showRoleOptions = true"
+                />
+                
+                <van-field
+                    v-if="selectedRole === '其他'"
+                    v-model="customRole"
+                    label="自定义角色"
+                    placeholder="请输入自定义角色"
+                    required
+                />
+            </div>
+            
+            <van-popup v-model="showRoleOptions" position="bottom">
+                <van-picker
+                    show-toolbar
+                    :columns="roleOptions"
+                    @confirm="onRoleSelect"
+                    @cancel="showRoleOptions = false"
+                />
+            </van-popup>
+        </van-dialog>
+    </div>
+
+    <script>
+        new Vue({
+            el: '#app',
+            data() {
+                return {
+                    activeTab: 0,
+                    pendingSubmissions: [],
+                    reviewedSubmissions: [],
+                    pointLogs: [],
+                    totalPoints: 0,
+                    monthlyPoints: 0,
+                    showReview: false,
+                    showDetail: false,
+                    currentItem: {},
+                    reviewStatus: 'approved',
+                    reviewPoints: 1,
+                    rejectReason: '',
+                    // 学生管理相关
+                    relatedStudents: [],
+                    linkRequests: [],
+                    showLinkCode: false,
+                    currentLinkCode: '',
+                    linkCodeExpiry: '',
+                    showAddStudent: false,
+                    newStudent: {
+                        accountId: ''
+                    },
+                    showPointSetting: false,
+                    defaultPoints: 1,
+                    showSubjectMultiplier: false,
+                    subjects: [
+                        { text: '数学', value: 'math' },
+                        { text: '语文', value: 'chinese' },
+                        { text: '英语', value: 'english' },
+                        { text: '物理', value: 'physics' },
+                        { text: '化学', value: 'chemistry' },
+                        { text: '生物', value: 'biology' },
+                        { text: '历史', value: 'history' },
+                        { text: '地理', value: 'geography' },
+                        { text: '政治', value: 'politics' }
+                    ],
+                    subjectMultipliers: {},
+                    showStudentDetail: false,
+                    currentStudent: {},
+                    parentAccountId: '',
+                    parentName: '家长',
+                    parentRole: '爸爸',
+                    // 角色设置相关
+                    showRoleSetting: false,
+                    selectedRole: '爸爸',
+                    customRole: '',
+                    showRoleOptions: false,
+                    roleOptions: ['妈妈', '爸爸', '姐姐', '哥哥', '外公', '外婆', '爷爷', '奶奶', '老师', '其他'],
+                    // 审核锁定相关
+                    reviewLocks: {},
+                    checkLocksInterval: null,
+                    // 统计相关
+                    showStudentSelector: false,
+                    selectedStudentId: 'all',
+                    selectedStudentName: '全部学生',
+                    showDatePicker: false,
+                    dateRange: 'all',
+                    dateRangeText: '全部时间',
+                    dateRangeOptions: [
+                        '全部时间', 
+                        '今日', 
+                        '本周', 
+                        '本月',
+                        '上个月',
+                        '近三个月'
+                    ],
+                    studentOptions: [],
+                    allSubmissions: [],
+                    // 积分调整相关
+                    showAdjustPoints: false,
+                    adjustPointsMode: '',
+                    adjustPointsValue: 1,
+                    adjustPointsRemark: '',
+                    showAdjustStudentSelector: false,
+                    selectedAdjustStudent: { id: '', name: '' },
+                    adjustStudentOptions: [],
+                    adjustPointsForSpecificStudent: false,
+                    // 调试相关
+                    showDebugInfo: true,
+                    studentCache: new Map(), // 添加学生信息缓存
+                };
+            },
+            created() {
+                this.loadSubmissions();
+                this.calculatePoints();
+                this.loadStudents();
+                this.loadLinkRequests();
+                this.loadPointSettings();
+                this.initParentAccount();
+                
+                // 定期检查锁定状态
+                this.checkLocksInterval = setInterval(() => {
+                    this.checkReviewLocks();
+                }, 10000); // 每10秒检查一次
+                
+                // 监听标签页切换
+                this.$watch('activeTab', (newVal) => {
+                    if (newVal === 2) { // 积分统计标签
+                        this.prepareStatisticsData();
+                        this.$nextTick(() => {
+                            this.renderCharts();
+                        });
+                    }
+                });
+
+                // 定期刷新学生信息
+                setInterval(() => {
+                    this.updateHomeworkStudentNames();
+                    this.updateStatisticsStudentNames();
+                }, 300000); // 每5分钟更新一次
+            },
+            beforeDestroy() {
+                // 清除定时器
+                if (this.checkLocksInterval) {
+                    clearInterval(this.checkLocksInterval);
+                }
+                
+                // 释放自己持有的锁
+                this.releaseAllLocks();
+            },
+            methods: {
+                initParentAccount() {
+                    // 检查是否已有账号，如果没有则创建
+                    let parentInfo = JSON.parse(sessionStorage.getItem('parentInfo') || '{}');
+                    
+                    if (!parentInfo.accountId) {
+                        // 生成随机账号ID (格式: P + 5位数字)
+                        const accountId = 'P' + Math.floor(10000 + Math.random() * 90000);
+                        parentInfo.accountId = accountId;
+                        parentInfo.name = parentInfo.name || this.parentName;
+                        parentInfo.role = parentInfo.role || '爸爸'; // 默认角色为爸爸
+                        sessionStorage.setItem('parentInfo', JSON.stringify(parentInfo));
+                    }
+                    
+                    // 确保有角色设置
+                    if (!parentInfo.role) {
+                        parentInfo.role = '妈妈';
+                        sessionStorage.setItem('parentInfo', JSON.stringify(parentInfo));
+                    }
+                    
+                    this.parentAccountId = parentInfo.accountId;
+                    this.parentName = parentInfo.name || '家长';
+                    this.parentRole = parentInfo.role;
+                    
+                    // 保存到全局家长信息列表
+                    const allParentInfos = JSON.parse(sessionStorage.getItem('allParentInfos') || '[]');
+                    const existingIndex = allParentInfos.findIndex(p => p.accountId === parentInfo.accountId);
+                    
+                    if (existingIndex === -1) {
+                        allParentInfos.push(parentInfo);
+                    } else {
+                        allParentInfos[existingIndex] = parentInfo;
+                    }
+                    
+                    sessionStorage.setItem('allParentInfos', JSON.stringify(allParentInfos));
+                },
+                getFileIcon(file) {
+                    if (file.isImage) {
+                        return 'photo-o';
+                    } else if (file.isVideo) {
+                        return 'video-o';
+                    } else {
+                        return 'description';
+                    }
+                },
+                onClickLeft() {
+                    window.location.href = 'index.html';
+                },
+                formatDate(timestamp) {
+                    const date = new Date(timestamp);
+                    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+                },
+                loadSubmissions() {
+                    // 从 sessionStorage 获取学生提交的内容
+                    const submissions = JSON.parse(sessionStorage.getItem('submissions') || '[]');
+                    
+                    // 确保每个提交都有有效的文件属性
+                    const processedSubmissions = submissions.map(item => {
+                        if (!item.files || item.files.length === 0) {
+                            // 如果没有文件，跳过这个提交
+                            return item;
+                        }
+                        
+                        // 确保文件属性正确
+                        item.files = item.files.map(file => {
+                            // 确保文件有正确的URL
+                            if (file.content) {
+                                file.url = file.content; // 使用保存的content作为url
+                            }
+                            return file;
+                        });
+                        
+                        // 添加学生姓名 - 从关联学生中查找
+                        if (!item.studentName) {
+                            // 尝试从studentInfo中获取
+                            const studentInfo = JSON.parse(sessionStorage.getItem('studentInfo') || '{}');
+                            if (studentInfo.name) {
+                                item.studentName = studentInfo.name;
+                            } else {
+                                // 如果没有找到，使用默认名称
+                                item.studentName = '未命名学生';
+                            }
+                        }
+                        
+                        return item;
+                    });
+                    
+                    // 保存所有提交数据用于统计
+                    this.allSubmissions = processedSubmissions;
+                    
+                    // 加载锁定状态
+                    this.loadReviewLocks();
+                    
+                    // 分类处理
+                    this.pendingSubmissions = processedSubmissions.filter(item => item.status === 'pending');
+                    this.reviewedSubmissions = processedSubmissions.filter(item => item.status !== 'pending');
+                },
+                calculatePoints() {
+                    // 计算积分统计
+                    const submissions = JSON.parse(sessionStorage.getItem('submissions') || '[]');
+                    const approvedSubmissions = submissions.filter(item => item.status === 'approved');
+                    
+                    // 计算总积分
+                    this.totalPoints = approvedSubmissions.reduce((sum, item) => {
+                        // 对于手动调整的记录，使用pointsChange而不是points
+                        if (item.isManualAdjustment) {
+                            return sum + (item.pointsChange || 0);
+                        }
+                        return sum + (item.points || 0);
+                    }, 0);
+                    
+                    // 计算本月积分
+                    const now = new Date();
+                    const currentMonth = now.getMonth();
+                    const currentYear = now.getFullYear();
+                    
+                    this.monthlyPoints = approvedSubmissions.reduce((sum, item) => {
+                        const date = new Date(item.timestamp);
+                        if (date.getMonth() === currentMonth && date.getFullYear() === currentYear) {
+                            // 对于手动调整的记录，使用pointsChange而不是points
+                            if (item.isManualAdjustment) {
+                                return sum + (item.pointsChange || 0);
+                            }
+                            return sum + (item.points || 0);
+                        }
+                        return sum;
+                    }, 0);
+                    
+                    // 积分记录
+                    this.pointLogs = approvedSubmissions.map(item => {
+                        const points = item.isManualAdjustment ? item.pointsChange : item.points || 0;
+                        const pointText = points >= 0 ? `+${points}` : `${points}`;
+                        
+                        return {
+                            subject: item.subject,
+                            type: item.type,
+                            points: points,
+                            pointText: pointText,
+                            timestamp: item.timestamp,
+                            studentName: item.studentName,
+                            isNegative: points < 0,
+                            remark: item.remark || ''
+                        };
+                    }).sort((a, b) => b.timestamp - a.timestamp);
+                },
+                showReviewDialog(item) {
+                    // 检查是否已被其他家长锁定
+                    const lockInfo = this.reviewLocks[item.id];
+                    if (lockInfo && lockInfo.parentId !== this.parentAccountId) {
+                        const lockTime = new Date(lockInfo.timestamp);
+                        const now = new Date();
+                        const diffMinutes = Math.floor((now - lockTime) / (1000 * 60));
+                        
+                        // 如果锁定时间超过5分钟，可以强制接管
+                        if (diffMinutes < 5) {
+                            this.$toast({
+                                message: `该提交正在被${lockInfo.parentRole || '其他家长'}审核中，请稍后再试`,
+                                position: 'bottom',
+                                duration: 3000
+                            });
+                            return;
+                        } else {
+                            // 超过5分钟，可以接管锁定
+                            this.$dialog.confirm({
+                                title: '提交已锁定',
+                                message: `该提交已被${lockInfo.parentRole || '其他家长'}锁定${diffMinutes}分钟，是否接管审核？`,
+                                confirmButtonText: '接管审核'
+                            }).then(() => {
+                                // 接管锁定
+                                this.lockReviewItem(item);
+                                this.proceedWithReview(item);
+                            }).catch(() => {
+                                // 取消操作
+                            });
+                            return;
+                        }
+                    }
+                    
+                    // 锁定当前项目
+                    this.lockReviewItem(item);
+                    
+                    // 继续审核流程
+                    this.proceedWithReview(item);
+                },
+                
+                proceedWithReview(item) {
+                    this.currentItem = {...item};
+                    this.reviewStatus = 'approved';
+                    this.reviewPoints = this.defaultPoints; // 使用默认积分值
+                    this.rejectReason = '';
+                    this.showReview = true;
+                    
+                    // 应用科目倍率
+                    if (item.subject) {
+                        const subjectKey = this.subjects.find(s => s.text === item.subject)?.value;
+                        if (subjectKey && this.subjectMultipliers[subjectKey]) {
+                            const multiplier = parseFloat(this.subjectMultipliers[subjectKey]);
+                            if (!isNaN(multiplier)) {
+                                this.reviewPoints = Math.round(this.reviewPoints * multiplier * 10) / 10;
+                            }
+                        }
+                    }
+                },
+                
+                // 锁定审核项目
+                lockReviewItem(item) {
+                    const lockInfo = {
+                        parentId: this.parentAccountId,
+                        parentRole: this.parentRole,
+                        timestamp: new Date().getTime()
+                    };
+                    
+                    // 保存锁定信息
+                    this.reviewLocks[item.id] = lockInfo;
+                    this.saveReviewLocks();
+                },
+                
+                // 释放审核锁定
+                releaseReviewLock(itemId) {
+                    if (this.reviewLocks[itemId]) {
+                        delete this.reviewLocks[itemId];
+                        this.saveReviewLocks();
+                    }
+                },
+                
+                // 释放所有自己持有的锁
+                releaseAllLocks() {
+                    let changed = false;
+                    for (const itemId in this.reviewLocks) {
+                        if (this.reviewLocks[itemId].parentId === this.parentAccountId) {
+                            delete this.reviewLocks[itemId];
+                            changed = true;
+                        }
+                    }
+                    
+                    if (changed) {
+                        this.saveReviewLocks();
+                    }
+                },
+                
+                // 保存锁定状态到sessionStorage
+                saveReviewLocks() {
+                    sessionStorage.setItem('reviewLocks', JSON.stringify(this.reviewLocks));
+                },
+                
+                // 从sessionStorage加载锁定状态
+                loadReviewLocks() {
+                    const locks = JSON.parse(sessionStorage.getItem('reviewLocks') || '{}');
+                    this.reviewLocks = locks;
+                },
+                
+                // 检查锁定状态
+                checkReviewLocks() {
+                    let changed = false;
+                    const now = new Date().getTime();
+                    
+                    // 检查是否有过期的锁（超过10分钟）
+                    for (const itemId in this.reviewLocks) {
+                        const lockTime = this.reviewLocks[itemId].timestamp;
+                        if (now - lockTime > 10 * 60 * 1000) { // 10分钟
+                            delete this.reviewLocks[itemId];
+                            changed = true;
+                        }
+                    }
+                    
+                    if (changed) {
+                        this.saveReviewLocks();
+                        this.loadSubmissions(); // 刷新显示
+                    }
+                },
+                viewSubmissionDetail(item) {
+                    this.currentItem = {...item};
+                    this.showDetail = true;
+                },
+                confirmReview() {
+                    // 获取所有提交
+                    const submissions = JSON.parse(sessionStorage.getItem('submissions') || '[]');
+                    
+                    // 找到当前审核的项目
+                    const index = submissions.findIndex(item => 
+                        item.id === this.currentItem.id
+                    );
+                    
+                    if (index !== -1) {
+                        // 更新审核状态
+                        submissions[index].status = this.reviewStatus;
+                        
+                        if (this.reviewStatus === 'approved') {
+                            // 确保积分是数字，可以为0
+                            const points = parseFloat(this.reviewPoints);
+                            submissions[index].points = isNaN(points) ? 0 : points;
+                        } else {
+                            submissions[index].rejectReason = this.rejectReason;
+                        }
+                        
+                        // 添加审核者角色信息
+                        submissions[index].reviewerRole = this.parentRole;
+                        submissions[index].reviewedBy = this.parentAccountId;
+                        submissions[index].reviewedAt = new Date().getTime();
+                        
+                        // 保存回 sessionStorage
+                        sessionStorage.setItem('submissions', JSON.stringify(submissions));
+                        
+                        // 释放锁定
+                        this.releaseReviewLock(this.currentItem.id);
+                        
+                        // 刷新数据
+                        this.loadSubmissions();
+                        this.calculatePoints();
+                        
+                        // 显示成功提示
+                        this.$toast.success('审核完成');
+                    }
+                },
+                // 学生管理相关方法
+                loadStudents() {
+                    // 从 sessionStorage 获取关联学生
+                    const students = JSON.parse(sessionStorage.getItem('relatedStudents') || '[]');
+                    this.relatedStudents = students;
+                    
+                    // 准备学生选择器数据
+                    this.studentOptions = [
+                        { id: 'all', name: '全部学生' },
+                        ...students.map(student => ({
+                            id: student.id,
+                            name: student.name || student.id
+                        }))
+                    ];
+                },
+                loadLinkRequests() {
+                    // 从 sessionStorage 获取关联请求
+                    const requests = JSON.parse(sessionStorage.getItem('linkRequests') || '[]');
+                    this.linkRequests = requests;
+                },
+                loadPointSettings() {
+                    // 加载积分设置
+                    const settings = JSON.parse(sessionStorage.getItem('pointSettings') || '{}');
+                    this.defaultPoints = settings.defaultPoints || 1;
+                    this.subjectMultipliers = settings.subjectMultipliers || {};
+                },
+                showLinkCodeDialog() {
+                    // 检查是否已有关联码
+                    const linkCodeData = JSON.parse(sessionStorage.getItem('linkCode') || '{}');
+                    const now = new Date().getTime();
+                    
+                    if (linkCodeData.code && linkCodeData.expiry && linkCodeData.expiry > now) {
+                        // 使用现有关联码
+                        this.currentLinkCode = linkCodeData.code;
+                        this.linkCodeExpiry = this.formatDate(linkCodeData.expiry);
+                    } else {
+                        // 生成新关联码
+                        this.generateNewLinkCode();
+                    }
+                    
+                    this.showLinkCode = true;
+                },
+                generateNewLinkCode() {
+                    // 生成6位随机数字关联码
+                    const code = Math.floor(100000 + Math.random() * 900000).toString();
+                    
+                    // 设置24小时有效期
+                    const expiry = new Date();
+                    expiry.setHours(expiry.getHours() + 24);
+                    
+                    // 保存关联码
+                    const linkCodeData = {
+                        code: code,
+                        expiry: expiry.getTime(),
+                        parentId: this.parentAccountId, // 使用家长账号ID
+                        parentName: this.parentName
+                    };
+                    
+                    sessionStorage.setItem('linkCode', JSON.stringify(linkCodeData));
+                    
+                    // 更新显示
+                    this.currentLinkCode = code;
+                    this.linkCodeExpiry = this.formatDate(expiry);
+                    
+                    this.$toast.success('已生成新的关联码');
+                },
+                copyLinkCode() {
+                    // 复制关联码到剪贴板
+                    const el = document.createElement('textarea');
+                    el.value = this.currentLinkCode;
+                    document.body.appendChild(el);
+                    el.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(el);
+                    
+                    this.$toast('关联码已复制');
+                },
+                showAddStudentDialog() {
+                    this.newStudent = {
+                        accountId: ''
+                    };
+                    this.showAddStudent = true;
+                },
+                confirmAddStudent() {
+                    // 通过账号添加
+                    if (!this.newStudent.accountId || !this.newStudent.accountId.startsWith('S')) {
+                        this.$toast('请输入有效的学生账号(S开头)');
+                        return;
+                    }
+                    
+                    // 查找学生信息
+                    const allStudentInfos = JSON.parse(sessionStorage.getItem('allStudentInfos') || '[]');
+                    const studentInfo = allStudentInfos.find(s => s.accountId === this.newStudent.accountId);
+                    
+                    if (!studentInfo) {
+                        // 创建一个临时学生记录
+                        const student = {
+                            id: this.newStudent.accountId,
+                            name: '未知学生',
+                            linkedTime: new Date().getTime(),
+                            status: '待完善信息'
+                        };
+                        
+                        // 添加到关联学生列表
+                        const students = JSON.parse(sessionStorage.getItem('relatedStudents') || '[]');
+                        
+                        // 检查是否已存在
+                        const existingIndex = students.findIndex(s => s.id === student.id);
+                        if (existingIndex !== -1) {
+                            this.$toast('该学生已在关联列表中');
+                            return;
+                        }
+                        
+                        students.push(student);
+                        sessionStorage.setItem('relatedStudents', JSON.stringify(students));
+                        
+                        // 刷新列表
+                        this.loadStudents();
+                        
+                        this.$toast.success('学生添加成功，等待学生完善信息');
+                    } else {
+                        // 使用找到的学生信息
+                        const student = {
+                            id: studentInfo.accountId,
+                            name: studentInfo.name || '未命名学生',
+                            linkedTime: new Date().getTime(),
+                            status: '已关联'
+                        };
+                        
+                        // 添加到关联学生列表
+                        const students = JSON.parse(sessionStorage.getItem('relatedStudents') || '[]');
+                        
+                        // 检查是否已存在
+                        const existingIndex = students.findIndex(s => s.id === student.id);
+                        if (existingIndex !== -1) {
+                            this.$toast('该学生已在关联列表中');
+                            return;
+                        }
+                        
+                        students.push(student);
+                        sessionStorage.setItem('relatedStudents', JSON.stringify(students));
+                        
+                        // 刷新列表
+                        this.loadStudents();
+                        
+                        this.$toast.success('学生添加成功');
+                    }
+                },
+                showPointSettingDialog() {
+                    this.showPointSetting = true;
+                },
+                saveDefaultPoints() {
+                    // 保存默认积分设置
+                    const settings = JSON.parse(sessionStorage.getItem('pointSettings') || '{}');
+                    settings.defaultPoints = this.defaultPoints;
+                    sessionStorage.setItem('pointSettings', JSON.stringify(settings));
+                    
+                    this.$toast.success('默认积分已保存');
+                },
+                showSubjectMultiplierDialog() {
+                    // 初始化科目倍率
+                    this.subjects.forEach(subject => {
+                        if (!this.subjectMultipliers[subject.value]) {
+                            this.subjectMultipliers[subject.value] = '1';
+                        }
+                    });
+                    
+                    this.showSubjectMultiplier = true;
+                },
+                saveSubjectMultipliers() {
+                    // 保存科目倍率设置
+                    const settings = JSON.parse(sessionStorage.getItem('pointSettings') || '{}');
+                    settings.subjectMultipliers = this.subjectMultipliers;
+                    sessionStorage.setItem('pointSettings', JSON.stringify(settings));
+                    
+                    this.$toast.success('科目倍率已保存');
+                },
+                approveRequest(request, index) {
+                    // 批准关联请求
+                    const student = {
+                        id: request.studentId,
+                        name: request.studentName,
+                        linkedTime: new Date().getTime(),
+                        status: '已关联',
+                        parentId: this.parentAccountId,
+                        parentName: this.parentName
+                    };
+                    
+                    // 添加到关联学生列表
+                    const students = JSON.parse(sessionStorage.getItem('relatedStudents') || '[]');
+                    
+                    // 检查是否已存在
+                    const existingIndex = students.findIndex(s => s.id === student.id);
+                    if (existingIndex !== -1) {
+                        // 更新已有记录
+                        students[existingIndex] = {
+                            ...students[existingIndex],
+                            linkedTime: new Date().getTime(),
+                            status: '已关联',
+                            parentId: this.parentAccountId,
+                            parentName: this.parentName
+                        };
+                    } else {
+                        // 添加新记录
+                        students.push(student);
+                    }
+                    
+                    sessionStorage.setItem('relatedStudents', JSON.stringify(students));
+                    
+                    // 从请求列表中移除
+                    const requests = JSON.parse(sessionStorage.getItem('linkRequests') || '[]');
+                    requests.splice(index, 1);
+                    sessionStorage.setItem('linkRequests', JSON.stringify(requests));
+                    
+                    // 刷新列表
+                    this.loadStudents();
+                    this.loadLinkRequests();
+                    
+                    this.$toast.success('已批准关联请求');
+                },
+                rejectRequest(request, index) {
+                    // 拒绝关联请求
+                    const requests = JSON.parse(sessionStorage.getItem('linkRequests') || '[]');
+                    requests.splice(index, 1);
+                    sessionStorage.setItem('linkRequests', JSON.stringify(requests));
+                    
+                    // 刷新列表
+                    this.loadLinkRequests();
+                    
+                    this.$toast.success('已拒绝关联请求');
+                },
+                viewStudentDetail(student) {
+                    this.currentStudent = {...student};
+                    this.showStudentDetail = true;
+                },
+                unlinkStudent() {
+                    // 解除学生关联
+                    const students = JSON.parse(sessionStorage.getItem('relatedStudents') || '[]');
+                    const index = students.findIndex(s => s.id === this.currentStudent.id);
+                    
+                    if (index !== -1) {
+                        students.splice(index, 1);
+                        sessionStorage.setItem('relatedStudents', JSON.stringify(students));
+                        
+                        // 刷新列表
+                        this.loadStudents();
+                        this.showStudentDetail = false;
+                        
+                        this.$toast.success('已解除关联');
+                    }
+                },
+                // 角色设置相关方法
+                showRoleSettingDialog() {
+                    this.selectedRole = this.parentRole;
+                    if (!this.roleOptions.includes(this.selectedRole)) {
+                        this.selectedRole = '其他';
+                        this.customRole = this.parentRole;
+                    } else {
+                        this.customRole = '';
+                    }
+                    this.showRoleSetting = true;
+                },
+                onRoleSelect(value) {
+                    this.selectedRole = value;
+                    this.showRoleOptions = false;
+                },
+                saveRole() {
+                    let finalRole = this.selectedRole;
+                    if (finalRole === '其他' && this.customRole.trim()) {
+                        finalRole = this.customRole.trim();
+                    }
+                    
+                    // 保存角色
+                    const parentInfo = JSON.parse(sessionStorage.getItem('parentInfo') || '{}');
+                    parentInfo.role = finalRole;
+                    sessionStorage.setItem('parentInfo', JSON.stringify(parentInfo));
+                    
+                    // 更新显示
+                    this.parentRole = finalRole;
+                    
+                    this.$toast.success('角色设置成功');
+                },
+                // 统计相关方法
+                prepareStatisticsData() {
+                    // 准备学生选择器数据
+                    this.studentOptions = [
+                        { id: 'all', name: '全部学生' },
+                        ...this.relatedStudents.map(student => ({
+                            id: student.id,
+                            name: student.name || student.id
+                        }))
+                    ];
+                },
+                
+                onStudentSelect(student) {
+                    this.selectedStudentId = student.id;
+                    this.selectedStudentName = student.name;
+                    this.showStudentSelector = false;
+                    
+                    // 重新渲染图表
+                    this.$nextTick(() => {
+                        this.renderCharts();
+                    });
+                },
+                
+                onDateRangeSelect(range) {
+                    this.dateRange = range;
+                    this.dateRangeText = range;
+                    this.showDatePicker = false;
+                    
+                    // 重新渲染图表
+                    this.$nextTick(() => {
+                        this.renderCharts();
+                    });
+                },
+                
+                // 根据筛选条件获取提交数据
+                getFilteredSubmissions() {
+                    let submissions = [...this.allSubmissions];
+                    
+                    // 按学生筛选
+                    if (this.selectedStudentId !== 'all') {
+                        submissions = submissions.filter(item => item.studentId === this.selectedStudentId);
+                    }
+                    
+                    // 按时间范围筛选
+                    const now = new Date();
+                    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+                    const thisWeekStart = today - now.getDay() * 24 * 60 * 60 * 1000;
+                    const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+                    const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1).getTime();
+                    const lastMonthEnd = thisMonthStart - 1;
+                    const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 3, 1).getTime();
+                    
+                    switch (this.dateRange) {
+                        case '今日':
+                            submissions = submissions.filter(item => item.timestamp >= today);
+                            break;
+                        case '本周':
+                            submissions = submissions.filter(item => item.timestamp >= thisWeekStart);
+                            break;
+                        case '本月':
+                            submissions = submissions.filter(item => item.timestamp >= thisMonthStart);
+                            break;
+                        case '上个月':
+                            submissions = submissions.filter(item => 
+                                item.timestamp >= lastMonthStart && item.timestamp <= lastMonthEnd
+                            );
+                            break;
+                        case '近三个月':
+                            submissions = submissions.filter(item => item.timestamp >= threeMonthsAgo);
+                            break;
+                    }
+                    
+                    return submissions;
+                },
+                
+                renderCharts() {
+                    const filteredSubmissions = this.getFilteredSubmissions();
+                    const approvedSubmissions = filteredSubmissions.filter(item => item.status === 'approved');
+                    
+                    // 渲染科目统计图表
+                    this.renderSubjectChart(approvedSubmissions);
+                    
+                    // 渲染类型统计图表
+                    this.renderTypeChart(approvedSubmissions);
+                    
+                    // 渲染积分趋势图表
+                    this.renderTrendChart(approvedSubmissions);
+                },
+                
+                renderSubjectChart(submissions) {
+                    // 按科目统计积分
+                    const subjectStats = {};
+                    submissions.forEach(item => {
+                        if (!subjectStats[item.subject]) {
+                            subjectStats[item.subject] = 0;
+                        }
+                        subjectStats[item.subject] += item.points || 0;
+                    });
+                    
+                    // 准备图表数据
+                    const data = Object.keys(subjectStats).map(subject => ({
+                        name: subject,
+                        value: subjectStats[subject]
+                    }));
+                    
+                    // 初始化图表
+                    const chartDom = document.getElementById('subjectChart');
+                    if (!chartDom) return;
+                    
+                    const chart = echarts.init(chartDom);
+                    const option = {
+                        tooltip: {
+                            trigger: 'item',
+                            formatter: '{b}: {c} 分 ({d}%)'
+                        },
+                        legend: {
+                            orient: 'horizontal',
+                            bottom: 10,
+                            data: data.map(item => item.name)
+                        },
+                        series: [
+                            {
+                                name: '科目积分',
+                                type: 'pie',
+                                radius: ['40%', '70%'],
+                                avoidLabelOverlap: false,
+                                itemStyle: {
+                                    borderRadius: 10,
+                                    borderColor: '#fff',
+                                    borderWidth: 2
+                                },
+                                label: {
+                                    show: false,
+                                    position: 'center'
+                                },
+                                emphasis: {
+                                    label: {
+                                        show: true,
+                                        fontSize: '18',
+                                        fontWeight: 'bold'
+                                    }
+                                },
+                                labelLine: {
+                                    show: false
+                                },
+                                data: data
+                            }
+                        ]
+                    };
+                    
+                    chart.setOption(option);
+                    
+                    // 适应容器大小
+                    window.addEventListener('resize', () => {
+                        chart.resize();
+                    });
+                },
+                
+                renderTypeChart(submissions) {
+                    // 按类型统计积分
+                    const typeStats = {};
+                    submissions.forEach(item => {
+                        if (!typeStats[item.type]) {
+                            typeStats[item.type] = 0;
+                        }
+                        typeStats[item.type] += item.points || 0;
+                    });
+                    
+                    // 准备图表数据
+                    const data = Object.keys(typeStats).map(type => ({
+                        name: type,
+                        value: typeStats[type]
+                    }));
+                    
+                    // 初始化图表
+                    const chartDom = document.getElementById('typeChart');
+                    if (!chartDom) return;
+                    
+                    const chart = echarts.init(chartDom);
+                    const option = {
+                        tooltip: {
+                            trigger: 'axis',
+                            axisPointer: {
+                                type: 'shadow'
+                            }
+                        },
+                        grid: {
+                            left: '3%',
+                            right: '4%',
+                            bottom: '3%',
+                            containLabel: true
+                        },
+                        xAxis: [
+                            {
+                                type: 'category',
+                                data: data.map(item => item.name),
+                                axisTick: {
+                                    alignWithLabel: true
+                                }
+                            }
+                        ],
+                        yAxis: [
+                            {
+                                type: 'value',
+                                name: '积分'
+                            }
+                        ],
+                        series: [
+                            {
+                                name: '积分',
+                                type: 'bar',
+                                barWidth: '60%',
+                                data: data.map(item => item.value),
+                                itemStyle: {
+                                    color: '#1989fa'
+                                }
+                            }
+                        ]
+                    };
+                    
+                    chart.setOption(option);
+                    
+                    // 适应容器大小
+                    window.addEventListener('resize', () => {
+                        chart.resize();
+                    });
+                },
+                
+                renderTrendChart(submissions) {
+                    // 按日期分组
+                    const dateGroups = {};
+                    submissions.forEach(item => {
+                        const date = new Date(item.timestamp);
+                        const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+                        
+                        if (!dateGroups[dateStr]) {
+                            dateGroups[dateStr] = 0;
+                        }
+                        dateGroups[dateStr] += item.points || 0;
+                    });
+                    
+                    // 排序日期
+                    const sortedDates = Object.keys(dateGroups).sort();
+                    
+                    // 准备图表数据
+                    const xData = sortedDates;
+                    const yData = sortedDates.map(date => dateGroups[date]);
+                    
+                    // 初始化图表
+                    const chartDom = document.getElementById('trendChart');
+                    if (!chartDom) return;
+                    
+                    const chart = echarts.init(chartDom);
+                    const option = {
+                        tooltip: {
+                            trigger: 'axis'
+                        },
+                        grid: {
+                            left: '3%',
+                            right: '4%',
+                            bottom: '3%',
+                            containLabel: true
+                        },
+                        xAxis: {
+                            type: 'category',
+                            boundaryGap: false,
+                            data: xData
+                        },
+                        yAxis: {
+                            type: 'value',
+                            name: '积分'
+                        },
+                        series: [
+                            {
+                                name: '积分',
+                                type: 'line',
+                                stack: '总量',
+                                areaStyle: {},
+                                emphasis: {
+                                    focus: 'series'
+                                },
+                                data: yData,
+                                itemStyle: {
+                                    color: '#1989fa'
+                                }
+                            }
+                        ]
+                    };
+                    
+                    chart.setOption(option);
+                    
+                    // 适应容器大小
+                    window.addEventListener('resize', () => {
+                        chart.resize();
+                    });
+                },
+                // 积分调整相关方法
+                showAdjustPointsDialog() {
+                    console.log('打开积分调整对话框');
+                    
+                    // 准备学生选择器数据
+                    this.adjustStudentOptions = this.relatedStudents.map(student => ({
+                        id: student.id,
+                        name: student.name || student.id
+                    }));
+                    
+                    // 重置表单
+                    this.adjustPointsMode = ''; // 初始不选择模式
+                    this.adjustPointsValue = 1;
+                    this.adjustPointsRemark = '';
+                    this.selectedAdjustStudent = { id: '', name: '' };
+                    this.adjustPointsForSpecificStudent = false;
+                    this.showAdjustStudentSelector = false;
+                    
+                    // 如果没有关联学生，显示提示
+                    if (this.adjustStudentOptions.length === 0) {
+                        this.$toast('请先关联学生');
+                        return;
+                    }
+                    
+                    // 如果只有一个学生，自动选择
+                    if (this.adjustStudentOptions.length === 1) {
+                        const student = this.adjustStudentOptions[0];
+                        this.selectedAdjustStudent = {
+                            id: student.id,
+                            name: student.name
+                        };
+                        console.log('自动选择唯一学生:', this.selectedAdjustStudent);
+                    }
+                    
+                    // 打开弹出层
+                    this.showAdjustPoints = true;
+                },
+                
+                adjustStudentPoints(student) {
+                    console.log('为特定学生调整积分:', student);
+                    
+                    // 重置表单
+                    this.adjustPointsMode = ''; // 初始不选择模式
+                    this.adjustPointsValue = 1;
+                    this.adjustPointsRemark = '';
+                    this.showAdjustStudentSelector = false;
+                    
+                    // 设置为特定学生
+                    this.selectedAdjustStudent = {
+                        id: student.id,
+                        name: student.name || student.id
+                    };
+                    this.adjustPointsForSpecificStudent = true;
+                    console.log('已设置选中学生:', this.selectedAdjustStudent);
+                    
+                    // 打开弹出层
+                    this.showAdjustPoints = true;
+                },
+                
+                setAdjustMode(mode) {
+                    console.log('设置调整模式:', mode);
+                    this.adjustPointsMode = mode;
+                },
+                
+                manualConfirmAdjustPoints() {
+                    console.log('手动确认调整积分');
+                    
+                    // 验证表单
+                    if (!this.selectedAdjustStudent.id) {
+                        this.$toast('请选择学生');
+                        return false;
+                    }
+
+                    if (!this.adjustPointsMode) {
+                        this.$toast('请选择调整模式');
+                        return false;
+                    }
+                    
+                    if (this.adjustPointsValue <= 0) {
+                        this.$toast('请输入有效的积分值');
+                        return false;
+                    }
+
+                    // 显示确认对话框
+                    const actionText = this.adjustPointsMode === 'increase' ? '增加' : '减少';
+                    const message = `是否确认为 ${this.selectedAdjustStudent.name} ${actionText} ${this.adjustPointsValue} 积分？`;
+                    
+                    this.$dialog.confirm({
+                        title: '确认操作',
+                        message: message,
+                        confirmButtonText: '确认',
+                        cancelButtonText: '取消'
+                    }).then(() => {
+                        // 用户点击确认，执行积分调整
+                        this.executePointsAdjustment();
+                    }).catch(() => {
+                        // 用户点击取消，不执行任何操作
+                        console.log('用户取消操作');
+                    });
+
+                    // 阻止对话框关闭
+                    return false;
+                },
+
+                executePointsAdjustment() {
+                    // 计算最终积分值
+                    const pointsChange = this.adjustPointsMode === 'increase' ? 
+                        this.adjustPointsValue : -this.adjustPointsValue;
+                    
+                    // 创建积分调整记录
+                    const adjustRecord = {
+                        id: 'adj_' + new Date().getTime() + '_' + Math.floor(Math.random() * 1000),
+                        subject: '手动调整',
+                        type: this.adjustPointsMode === 'increase' ? '增加积分' : '减少积分',
+                        points: Math.abs(pointsChange),
+                        timestamp: new Date().getTime(),
+                        status: 'approved',
+                        studentId: this.selectedAdjustStudent.id,
+                        studentName: this.selectedAdjustStudent.name,
+                        reviewedBy: this.parentAccountId,
+                        reviewerRole: this.parentRole,
+                        remark: this.adjustPointsRemark || '',
+                        isManualAdjustment: true,
+                        pointsChange: pointsChange
+                    };
+                    
+                    console.log('创建积分记录:', adjustRecord);
+                    
+                    // 保存到提交记录
+                    const submissions = JSON.parse(sessionStorage.getItem('submissions') || '[]');
+                    submissions.unshift(adjustRecord);
+                    sessionStorage.setItem('submissions', JSON.stringify(submissions));
+                    
+                    // 刷新数据
+                    this.loadSubmissions();
+                    this.calculatePoints();
+                    
+                    // 显示成功提示
+                    const actionText = this.adjustPointsMode === 'increase' ? '增加' : '减少';
+                    this.$toast.success(`已${actionText} ${Math.abs(pointsChange)} 积分`);
+                    
+                    // 关闭弹窗
+                    this.showAdjustPoints = false;
+                    
+                    // 如果是从学生详情页打开的，关闭学生详情页
+                    if (this.adjustPointsForSpecificStudent) {
+                        this.closeStudentDetail();
+                    }
+                },
+                
+                onAdjustStudentSelect(student) {
+                    console.log('选择学生:', student);
+                    // 创建新对象避免引用问题
+                    this.selectedAdjustStudent = {
+                        id: student.id,
+                        name: student.name
+                    };
+                    this.showAdjustStudentSelector = false;
+                },
+                
+                onAdjustPointsClose() {
+                    console.log('积分调整弹窗关闭');
+                    this.showAdjustPoints = false;
+                },
+                
+                cancelAdjustPoints() {
+                    console.log('取消积分调整');
+                    this.showAdjustPoints = false;
+                },
+                
+                closeStudentDetail() {
+                    console.log('关闭学生详情页');
+                    this.showStudentDetail = false;
+                },
+
+                // 优化手机号登录
+                async handlePhoneLogin() {
+                    this.$toast.loading({
+                        message: '登录中...',
+                        forbidClick: true,
+                        duration: 0
+                    });
+                    try {
+                        // 使用防抖处理
+                        if (this.loginTimer) clearTimeout(this.loginTimer);
+                        this.loginTimer = setTimeout(async () => {
+                            const response = await fetch('/api/parent/phone-login', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    phone: this.phone,
+                                    code: this.verificationCode
+                                })
+                            });
+                            const data = await response.json();
+                            if (data.success) {
+                                localStorage.setItem('parentToken', data.token);
+                                this.loadDashboard();
+                            }
+                        }, 300);
+                    } catch (error) {
+                        console.error('登录失败:', error);
+                    } finally {
+                        this.$toast.clear();
+                    }
+                },
+
+                // 获取最新的学生信息
+                async getStudentInfo(studentId) {
+                    if (!studentId) return null;
+                    
+                    try {
+                        // 检查缓存是否需要更新
+                        const now = Date.now();
+                        const cached = this.studentCache.get(studentId);
+                        if (cached && (now - cached.timestamp) < 60000) { // 1分钟缓存
+                            return cached.data;
+                        }
+
+                        const response = await fetch(`/api/student/${studentId}`);
+                        const data = await response.json();
+                        if (data.success) {
+                            // 更新缓存
+                            this.studentCache.set(studentId, {
+                                data: data.student,
+                                timestamp: now
+                            });
+                            return data.student;
+                        }
+                    } catch (error) {
+                        console.error('获取学生信息失败:', error);
+                    }
+                    return null;
+                },
+
+                // 更新作业列表中的学生信息
+                async updateHomeworkStudentNames() {
+                    for (const homework of this.homeworkList) {
+                        const student = await this.getStudentInfo(homework.studentId);
+                        if (student) {
+                            this.$set(homework, 'studentName', student.name);
+                        }
+                    }
+                },
+
+                // 更新统计数据中的学生信息
+                async updateStatisticsStudentNames() {
+                    for (const stat of this.statistics) {
+                        const student = await this.getStudentInfo(stat.studentId);
+                        if (student) {
+                            this.$set(stat, 'studentName', student.name);
+                        }
+                    }
+                },
+
+                // 加载仪表板数据
+                async loadDashboard() {
+                    await this.loadHomeworkList();
+                    await this.loadStatistics();
+                    // 更新所有学生信息
+                    await this.updateHomeworkStudentNames();
+                    await this.updateStatisticsStudentNames();
+                }
+            },
+            computed: {
+                // 筛选后的提交数据
+                filteredSubmissions() {
+                    return this.getFilteredSubmissions();
+                },
+                
+                // 筛选后的积分记录
+                filteredPointLogs() {
+                    const submissions = this.filteredSubmissions.filter(item => item.status === 'approved');
+                    return submissions.map(item => {
+                        const points = item.isManualAdjustment ? item.pointsChange : item.points || 0;
+                        const pointText = points >= 0 ? `+${points}` : `${points}`;
+                        
+                        return {
+                            subject: item.subject,
+                            type: item.type,
+                            points: points,
+                            pointText: pointText,
+                            timestamp: item.timestamp,
+                            studentName: item.studentName,
+                            isNegative: points < 0,
+                            remark: item.remark || ''
+                        };
+                    }).sort((a, b) => b.timestamp - a.timestamp);
+                },
+                
+                // 筛选后的总积分
+                filteredTotalPoints() {
+                    return this.filteredSubmissions
+                        .filter(item => item.status === 'approved')
+                        .reduce((sum, item) => {
+                            // 对于手动调整的记录，使用pointsChange而不是points
+                            if (item.isManualAdjustment) {
+                                return sum + (item.pointsChange || 0);
+                            }
+                            return sum + (item.points || 0);
+                        }, 0);
+                },
+                
+                // 筛选后的本月积分
+                filteredMonthlyPoints() {
+                    const now = new Date();
+                    const currentMonth = now.getMonth();
+                    const currentYear = now.getFullYear();
+                    
+                    return this.filteredSubmissions
+                        .filter(item => item.status === 'approved')
+                        .filter(item => {
+                            const date = new Date(item.timestamp);
+                            return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
+                        })
+                        .reduce((sum, item) => {
+                            // 对于手动调整的记录，使用pointsChange而不是points
+                            if (item.isManualAdjustment) {
+                                return sum + (item.pointsChange || 0);
+                            }
+                            return sum + (item.points || 0);
+                        }, 0);
+                }
+            }
+        });
+    </script>
+</body>
+</html> 

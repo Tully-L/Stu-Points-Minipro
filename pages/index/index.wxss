@@ -1,0 +1,149 @@
+.container {
+  min-height: 100vh;
+  background: #f7f8fa;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  background: linear-gradient(180deg, #1989fa 0%, #4bb0ff 100%);
+  padding: 100rpx 40rpx 60rpx;
+  text-align: center;
+  color: #fff;
+}
+
+.logo {
+  width: 160rpx;
+  height: 160rpx;
+  margin-bottom: 30rpx;
+}
+
+.title {
+  font-size: 40rpx;
+  font-weight: bold;
+  margin-bottom: 16rpx;
+}
+
+.subtitle {
+  font-size: 28rpx;
+  opacity: 0.9;
+}
+
+.content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 40rpx;
+}
+
+.login-btn {
+  width: 100%;
+  height: 88rpx;
+  line-height: 88rpx;
+  background: #07c160;
+  color: #fff;
+  font-size: 32rpx;
+  border-radius: 44rpx;
+  border: none;
+  margin-top: 40rpx;
+}
+
+.login-btn::after {
+  display: none;
+}
+
+.login-btn.disabled {
+  background: #ccc;
+  color: #fff;
+}
+
+.loading {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.7);
+  padding: 30rpx;
+  border-radius: 12rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: #fff;
+}
+
+.loading-icon {
+  width: 60rpx;
+  height: 60rpx;
+  border: 4rpx solid #fff;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 20rpx;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.role-selection {
+  margin-top: 40rpx;
+}
+
+.role-selection .subtitle {
+  text-align: center;
+  margin-bottom: 32rpx;
+}
+
+.role-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 32rpx;
+}
+
+.role-card {
+  background: #fff;
+  border-radius: 24rpx;
+  padding: 40rpx;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.05);
+}
+
+.role-icon {
+  width: 96rpx;
+  height: 96rpx;
+  margin-right: 32rpx;
+}
+
+.role-info {
+  flex: 1;
+}
+
+.role-title {
+  font-size: 36rpx;
+  color: #323233;
+  font-weight: bold;
+  margin-bottom: 8rpx;
+}
+
+.role-desc {
+  font-size: 28rpx;
+  color: #969799;
+}
+
+.icon-arrow {
+  font-size: 32rpx;
+  color: #969799;
+}
+
+/* 图标字体 */
+@font-face {
+  font-family: 'iconfont';
+  src: url('data:font/woff2;charset=utf-8;base64,d09GMgABAAAAAALcAAsAAAAABqwAAAKPAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHEIGVgCDBgqBEIEGATYCJAMMCwgABCAFhG0HNRsRBsgOJUHBwAAAAABEPHzt9+7O3f0iQRJNHh1PJ0E0RCKhkkYWCoVE6IQO5f9c9CYvk0g1kOTt+5Z87YaZZqYJhRAJ4YT/53J6I1CQ+YFymWPQGBtF9QKMAwpob4xBFliCvGHsghd4mECraT1yR1lVK4QpY1IgrhgWBWHKWGXJD81CveRgFk9QaabH6RGeR9+P/1YIU0kqY8bR5xUlkPvV37ZgRfuvAKEI4OZzZKwBhTgvTR5pCsQxTVv5Zz0HrFoWv22Lz8T+/8dDdiXN6h9eESWoW2XsBGzCr/5KEvx6kQR+2xYU1Qz8QDhxe5yS9Gx7ezORXL05OVnfn0j6vD+R2Hb79nh8Zq1/ZSx9/37s1e0xZSS5Zev+/vjdO1N7Y/qd8bvTbHvt9ruxyBuT09wbSW/cmX53Qrl1e/LOnfGbt8dg9+RhK9Bub7c/e9+/Py5/GBlhz5+PwJjH7wYNVjc1qe0/GVQ3OFhV1dLc3NKiqmrQ4MH/zf+6F/5N/VOD/0MD8Df5L1SX/qr+ZvVvUAFQ+9eCAv4L3wI2h2qbGmrTrack1NSxDRKt2qC+1wAtPa1jf5qh1YgBzWYMkDSZh6zZAqXAtdCgzXo0arYJrVb1HW7Th0NEUeAKiwChywYkHd5B1uUapcA90KDPa2jUFRFanYz2iG2GIxQzRhpIB+QXeGxMWaiq0f4h71dhnrpC+YVsfBHEOBvzN3OKOTHHvuiFPWOMwJPcwxk4DKqqwxJ5jHXVY1DVNJo9xvQYqcwYogakBYgvgI8yRrEEVTrfP4j1VgrzEK7K+AtiRF8pEMZy8PyaclL5qOy+0hfUE8YwBPBIXAeOAQ6KUh2sAmJj2KqVHgaqVBpkS2OMXkZUjK+ovt4eaGVeZkQlRY4SNdS3VqE2NpYAAAA=') format('woff2');
+} 

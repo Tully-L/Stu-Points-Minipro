@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#1989fa">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="积分管理">
+    <meta name="format-detection" content="telephone=no">
+    <title>积分管理系统</title>
+    
+    <!-- 配置信息 -->
+    <script>
+        window.APP_CONFIG = {
+            debug: location.search.indexOf('debug=true') > -1,
+            baseUrl: '/points',
+            apiBaseUrl: '/points/api',
+            wxAppId: 'wxbdb916d3e2b09add'
+        };
+    </script>
+
+    <!-- PWA 支持 -->
+    <link rel="manifest" href="/points/manifest.json">
+    <link rel="apple-touch-icon" href="/points/icons/icon-192x192.png">
+    
+    <!-- 引入样式文件 -->
+    <link rel="stylesheet" href="https://fastly.jsdelivr.net/npm/vant@2.12/lib/index.css"/>
+    <!-- 引入 Vue 和 Vant 的 JS 文件 -->
+    <script src="https://fastly.jsdelivr.net/npm/vue@2.6/dist/vue.min.js"></script>
+    <script src="https://fastly.jsdelivr.net/npm/vant@2.12/lib/vant.min.js"></script>
+    <!-- 引入微信 JSSDK -->
+    <script src="https://res.wx.qq.com/open/js/jweixin-1.6.0.js"></script>
+    <!-- 添加调试工具 -->
+    <script src="https://cdn.bootcdn.net/ajax/libs/vConsole/3.9.1/vconsole.min.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f7f8fa;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        .page {
+            min-height: 100vh;
+            background: #fff;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .header {
+            padding: 48px 20px 20px;
+            text-align: center;
+            background: linear-gradient(180deg, #1989fa 0%, #ffffff 100%);
+            color: white;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+        
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .content {
+            flex: 1;
+            padding: 20px;
+        }
+        
+        .role-cards {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-top: 20px;
+        }
+        
+        .role-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        .role-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 24px;
+            background: #1989fa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 16px;
+            color: white;
+            font-size: 24px;
+        }
+        
+        .role-info {
+            flex: 1;
+        }
+        
+        .role-title {
+            font-size: 18px;
+            font-weight: 500;
+            color: #323233;
+            margin-bottom: 4px;
+        }
+        
+        .role-desc {
+            font-size: 12px;
+            color: #969799;
+        }
+        
+        .login-popup {
+            padding: 20px;
+        }
+        
+        .login-title {
+            text-align: center;
+            font-size: 18px;
+            font-weight: 500;
+            margin-bottom: 20px;
+            color: #323233;
+        }
+        
+        .login-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding: 0 16px;
+        }
+
+        .phone-form {
+            padding: 16px;
+        }
+
+        .login-container {
+            padding: 20px;
+            box-sizing: border-box;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .logo {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 16px;
+        }
+        .title {
+            font-size: 24px;
+            color: #323233;
+            margin-bottom: 8px;
+        }
+        .subtitle {
+            font-size: 14px;
+            color: #969799;
+        }
+        .login-box {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 8px 12px rgba(0, 0, 0, 0.1);
+            margin-bottom: 24px;
+        }
+        .wechat-btn {
+            margin: 16px 0;
+            height: 44px;
+            border-radius: 22px;
+            font-size: 16px;
+            background: #07c160;
+            border: none;
+        }
+        .role-selection {
+            margin-top: 24px;
+        }
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="login-container">
+            <!-- 头部 -->
+            <div class="header">
+                <img class="logo" src="icons/icon-192x192.png" alt="Logo">
+                <div class="title">积分管理系统</div>
+                <div class="subtitle">请使用微信账号登录</div>
+            </div>
+
+            <!-- 登录区域 -->
+            <div class="login-box" v-if="!isLoggedIn">
+                <van-button
+                    class="wechat-btn"
+                    block
+                    color="#07c160"
+                    icon="wechat"
+                    @click="handleWechatLogin"
+                >
+                    微信一键登录
+                </van-button>
+            </div>
+
+            <!-- 角色选择 -->
+            <div class="role-selection" v-if="isLoggedIn && !roleSelected">
+                <div class="subtitle" style="text-align: center; margin-bottom: 16px;">
+                    请选择您的身份
+                </div>
+                <div class="role-card" @click="selectRole('student')">
+                    <img class="role-icon" src="icons/student-icon.png" alt="学生">
+                    <div class="role-info">
+                        <div class="role-title">我是学生</div>
+                        <div class="role-desc">提交作业、查看积分</div>
+                    </div>
+                    <van-icon name="arrow" />
+                </div>
+                <div class="role-card" @click="selectRole('parent')">
+                    <img class="role-icon" src="icons/parent-icon.png" alt="家长">
+                    <div class="role-info">
+                        <div class="role-title">我是家长</div>
+                        <div class="role-desc">查看进度、管理积分</div>
+                    </div>
+                    <van-icon name="arrow" />
+                </div>
+            </div>
+
+            <!-- 加载遮罩 -->
+            <div class="loading-overlay" v-if="loading">
+                <van-loading type="spinner" color="#1989fa" size="24px">
+                    处理中...
+                </van-loading>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        new Vue({
+            el: '#app',
+            data() {
+                return {
+                    isLoggedIn: false,
+                    roleSelected: false,
+                    loading: false,
+                    userInfo: null,
+                    debug: window.APP_CONFIG.debug
+                };
+            },
+            created() {
+                this.initWxConfig();
+                // 检查是否已登录
+                const token = localStorage.getItem('userToken');
+                if (token) {
+                    this.isLoggedIn = true;
+                    this.checkExistingRole();
+                }
+            },
+            methods: {
+                async initWxConfig() {
+                    try {
+                        const isWeixinBrowser = /MicroMessenger/i.test(navigator.userAgent);
+                        if (!isWeixinBrowser) {
+                            console.log('非微信环境，跳过配置');
+                            return;
+                        }
+
+                        // 获取当前页面URL（去除#号后的部分）
+                        const url = window.location.href.split('#')[0];
+                        
+                        // 调试信息
+                        if (this.debug) {
+                            console.log('当前URL:', url);
+                        }
+
+                        // 从服务器获取微信配置
+                        const configResponse = await fetch(`${window.APP_CONFIG.apiBaseUrl}/wx/config`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json'
+                            },
+                            body: JSON.stringify({ 
+                                url,
+                                debug: this.debug
+                            })
+                        });
+
+                        if (!configResponse.ok) {
+                            throw new Error(`HTTP error! status: ${configResponse.status}`);
+                        }
+
+                        const config = await configResponse.json();
+                        
+                        if (this.debug) {
+                            console.log('微信配置:', config);
+                        }
+
+                        if (!config.success) {
+                            throw new Error(config.message || '获取配置失败');
+                        }
+
+                        // 配置微信 JSSDK
+                        wx.config({
+                            debug: this.debug,
+                            appId: window.APP_CONFIG.wxAppId,
+                            timestamp: config.timestamp,
+                            nonceStr: config.nonceStr,
+                            signature: config.signature,
+                            jsApiList: [
+                                'checkJsApi',
+                                'updateAppMessageShareData',
+                                'onMenuShareTimeline',
+                                'getLocation',
+                                'chooseImage',
+                                'previewImage',
+                                'uploadImage',
+                                'downloadImage',
+                                'openLocation',
+                                'getNetworkType',
+                                'closeWindow',
+                                'scanQRCode'
+                            ]
+                        });
+
+                        // 注册微信事件
+                        wx.ready(() => {
+                            console.log('微信 JSSDK 初始化成功');
+                            if (this.debug) {
+                                this.$toast.success('微信初始化成功');
+                            }
+                        });
+
+                        wx.error((err) => {
+                            console.error('微信 JSSDK 初始化失败:', err);
+                            if (this.debug) {
+                                this.$toast.fail(`微信初始化失败: ${err.errMsg}`);
+                            }
+                        });
+                    } catch (error) {
+                        console.error('初始化微信配置失败:', error);
+                        if (this.debug) {
+                            this.$toast.fail(`配置失败: ${error.message}`);
+                        }
+                    }
+                },
+
+                async handleWechatLogin() {
+                    if (this.loading) return;
+                    this.loading = true;
+                    
+                    try {
+                        const isWeixinBrowser = /MicroMessenger/i.test(navigator.userAgent);
+                        if (!isWeixinBrowser) {
+                            this.$toast('请在微信中打开');
+                            return;
+                        }
+
+                        // 生成并存储state用于安全验证
+                        const state = Math.random().toString(36).substring(2);
+                        localStorage.setItem('wxState', state);
+
+                        // 执行微信登录
+                        const loginResult = await this.wxLogin();
+                        
+                        if (loginResult.success) {
+                            this.isLoggedIn = true;
+                            this.userInfo = loginResult.userInfo;
+                            localStorage.setItem('userToken', loginResult.token);
+                            this.$toast.success('登录成功');
+                            this.roleSelected = false;
+                        } else {
+                            throw new Error(loginResult.message || '登录失败');
+                        }
+                    } catch (error) {
+                        console.error('登录失败:', error);
+                        this.$toast.fail(error.message || '登录失败，请重试');
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+
+                async wxLogin() {
+                    return new Promise((resolve, reject) => {
+                        if (typeof wx === 'undefined' || !wx.login) {
+                            reject(new Error('微信 JSSDK 未正确加载'));
+                            return;
+                        }
+
+                        wx.login({
+                            success: async (res) => {
+                                if (res.code) {
+                                    try {
+                                        const response = await fetch(`${window.APP_CONFIG.apiBaseUrl}/wx/login`, {
+                                            method: 'POST',
+                                            headers: {
+                                                'Content-Type': 'application/json',
+                                                'Accept': 'application/json'
+                                            },
+                                            body: JSON.stringify({ 
+                                                code: res.code,
+                                                state: localStorage.getItem('wxState')
+                                            })
+                                        });
+
+                                        if (!response.ok) {
+                                            throw new Error(`登录请求失败: ${response.status}`);
+                                        }
+
+                                        const data = await response.json();
+                                        resolve(data);
+                                    } catch (error) {
+                                        reject(error);
+                                    }
+                                } else {
+                                    reject(new Error('获取微信授权失败'));
+                                }
+                            },
+                            fail: (error) => {
+                                reject(new Error('微信登录失败: ' + error.errMsg));
+                            }
+                        });
+                    });
+                },
+
+                async checkExistingRole() {
+                    try {
+                        const token = localStorage.getItem('userToken');
+                        if (!token) {
+                            return;
+                        }
+
+                        const response = await fetch('/api/user/role', {
+                            headers: {
+                                'Authorization': `Bearer ${token}`
+                            }
+                        });
+
+                        if (!response.ok) {
+                            throw new Error('获取角色信息失败');
+                        }
+
+                        const data = await response.json();
+                        if (data.role) {
+                            await this.redirectToRole(data.role);
+                        }
+                    } catch (error) {
+                        console.error('检查角色失败:', error);
+                        this.$toast.fail('获取角色信息失败，请重试');
+                    }
+                },
+
+                async selectRole(role) {
+                    if (this.loading) return;
+                    this.loading = true;
+                    
+                    try {
+                        const token = localStorage.getItem('userToken');
+                        if (!token) {
+                            throw new Error('未登录');
+                        }
+
+                        const response = await fetch(`${window.APP_CONFIG.apiBaseUrl}/user/role`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                            },
+                            body: JSON.stringify({ role })
+                        });
+
+                        if (!response.ok) {
+                            throw new Error('设置角色失败');
+                        }
+
+                        const data = await response.json();
+                        if (data.success) {
+                            localStorage.setItem('userRole', role);
+                            await this.redirectToRole(role);
+                        } else {
+                            throw new Error(data.message || '设置角色失败');
+                        }
+                    } catch (error) {
+                        console.error('设置角色失败:', error);
+                        this.$toast.fail(error.message || '设置角色失败，请重试');
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+
+                async redirectToRole(role) {
+                    const page = role === 'student' ? 'student-dashboard.html' : 'parent-dashboard.html';
+                    window.location.href = `${window.APP_CONFIG.baseUrl}/${page}?t=${Date.now()}`;
+                }
+            }
+        });
+
+        // 初始化调试工具
+        if (window.APP_CONFIG.debug) {
+            new VConsole();
+        }
+    </script>
+</body>
+</html> 

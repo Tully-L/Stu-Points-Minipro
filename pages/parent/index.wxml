@@ -1,0 +1,102 @@
+<view class="container">
+  <!-- 头部信息 -->
+  <view class="header">
+    <view class="user-info">
+      <image class="avatar" src="{{userInfo.avatarUrl || '/images/icons/parent.png'}}" mode="aspectFill"></image>
+      <text class="nickname">{{userInfo.nickName || '家长'}}</text>
+    </view>
+  </view>
+
+  <!-- 学生选择器 -->
+  <view class="student-selector">
+    <picker bindchange="onStudentChange" value="{{currentStudentIndex}}" range="{{students}}" range-key="name">
+      <view class="student-picker">
+        <text class="label">当前学生：</text>
+        <text class="value">{{currentStudent.name || '请选择学生'}}</text>
+        <text class="arrow">></text>
+      </view>
+    </picker>
+    <view class="add-student" bindtap="showAddStudentModal">
+      <text class="icon">+</text>
+      <text>添加学生</text>
+    </view>
+  </view>
+
+  <!-- 统计信息 -->
+  <view class="stats-container" wx:if="{{currentStudent}}">
+    <view class="stats-item">
+      <text class="stats-value">{{stats.totalPoints}}</text>
+      <text class="stats-label">总积分</text>
+    </view>
+    <view class="stats-item">
+      <text class="stats-value">{{stats.monthPoints}}</text>
+      <text class="stats-label">本月积分</text>
+    </view>
+    <view class="stats-item">
+      <text class="stats-value">{{stats.submissionCount}}</text>
+      <text class="stats-label">提交次数</text>
+    </view>
+    <view class="stats-item">
+      <text class="stats-value">{{stats.passRate}}%</text>
+      <text class="stats-label">通过率</text>
+    </view>
+  </view>
+
+  <!-- 标签页 -->
+  <view class="tabs">
+    <view class="tab {{currentTab === 0 ? 'active' : ''}}" bindtap="onTabChange" data-index="0">
+      待审核作业
+    </view>
+    <view class="tab {{currentTab === 1 ? 'active' : ''}}" bindtap="onTabChange" data-index="1">
+      历史记录
+    </view>
+  </view>
+
+  <!-- 待审核作业列表 -->
+  <view class="homework-list" wx:if="{{currentTab === 0}}">
+    <view class="empty-tip" wx:if="{{!pendingHomework.length}}">
+      暂无待审核作业
+    </view>
+    <view class="homework-item" wx:for="{{pendingHomework}}" wx:key="id" bindtap="handleReviewHomework" data-id="{{item.id}}">
+      <view class="homework-info">
+        <text class="homework-title">{{item.title}}</text>
+        <text class="homework-time">提交时间：{{item.createTime}}</text>
+      </view>
+      <text class="homework-status">待审核</text>
+    </view>
+  </view>
+
+  <!-- 历史记录列表 -->
+  <view class="history-list" wx:if="{{currentTab === 1}}">
+    <!-- 历史记录内容 -->
+  </view>
+
+  <!-- 添加学生弹窗 -->
+  <view class="modal" wx:if="{{showAddStudent}}">
+    <view class="modal-content">
+      <view class="modal-header">
+        <text class="modal-title">添加学生</text>
+      </view>
+      <view class="modal-body">
+        <view class="form-item">
+          <text class="label">学号</text>
+          <input class="input" type="text" placeholder="请输入学号" value="{{addStudentForm.username}}" bindinput="onAddStudentInput" data-field="username" />
+        </view>
+        <view class="form-item">
+          <text class="label">姓名</text>
+          <input class="input" type="text" placeholder="请输入姓名" value="{{addStudentForm.name}}" bindinput="onAddStudentInput" data-field="name" />
+        </view>
+      </view>
+      <view class="modal-footer">
+        <button class="btn btn-cancel" bindtap="hideAddStudentModal">取消</button>
+        <button class="btn btn-confirm" bindtap="handleAddStudent" loading="{{loading}}">确定</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 加载中 -->
+  <view class="loading" wx:if="{{loading}}">
+    <view class="loading-icon"></view>
+    <text>加载中...</text>
+  </view>
+</view> 

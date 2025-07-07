@@ -1,0 +1,50 @@
+# ===========================================
+# H5移动端成绩管理系统 - 环境变量配置模板
+# ===========================================
+# 请将此文件重命名为 .env.local 并填入真实的配置信息
+
+# 数据库配置
+# 请替换为您从 Neon 或 Supabase 获取的实际连接字符串
+DATABASE_URL=postgresql://username:password@hostname:port/database_name
+
+# Cloudinary配置 (图片存储服务)
+# 请在 https://cloudinary.com 注册并获取以下信息
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
+
+# JWT认证配置
+# 请生成一个强密码作为JWT密钥（至少32位）
+JWT_SECRET=your-super-secret-jwt-key-change-this-in-production-please-make-it-very-long
+JWT_EXPIRES_IN=7d
+
+# 开发环境配置
+NODE_ENV=development
+
+# 环境配置
+ENV=development  # development 或 production
+
+# API 配置
+API_BASE_URL=https://tully.top
+API_VERSION=v1
+
+# 微信配置
+WECHAT_APP_ID=wxbdb916d3e2b09add
+WECHAT_APP_SECRET=65aaa2b1d8472153ed08b14e6e279a51
+
+# 存储配置
+STORAGE_TYPE=local  # local 或 cloud
+CLOUD_STORAGE_URL=your_cloud_storage_url
+
+# 其他配置
+DEBUG_MODE=true
+ENABLE_MOCK=true
+AUTO_LOGIN=false
+
+# ===========================================
+# 配置说明：
+# 1. 将此文件重命名为 .env.local
+# 2. 替换所有 your_xxx 为实际的配置值
+# 3. 确保 JWT_SECRET 至少32个字符
+# 4. DATABASE_URL 格式：postgresql://用户名:密码@主机:端口/数据库名
+# =========================================== 

@@ -1,0 +1,99 @@
+.container {
+  min-height: 100vh;
+  background-color: #f8f8f8;
+  padding-bottom: 40rpx;
+}
+
+.header {
+  background-color: #fff;
+  padding: 40rpx;
+  text-align: center;
+  margin-bottom: 20rpx;
+}
+
+.points {
+  font-size: 60rpx;
+  font-weight: bold;
+  margin-bottom: 20rpx;
+}
+
+.points.plus {
+  color: #07c160;
+}
+
+.points.minus {
+  color: #ee0a24;
+}
+
+.title {
+  font-size: 32rpx;
+  color: #333;
+  margin-bottom: 10rpx;
+}
+
+.time {
+  font-size: 24rpx;
+  color: #999;
+}
+
+.content {
+  background-color: #fff;
+  padding: 0 30rpx;
+}
+
+.section {
+  padding: 30rpx 0;
+  border-bottom: 1rpx solid #eee;
+}
+
+.section:last-child {
+  border-bottom: none;
+}
+
+.section-title {
+  font-size: 28rpx;
+  color: #666;
+  margin-bottom: 20rpx;
+}
+
+.section-content {
+  font-size: 28rpx;
+  color: #333;
+  line-height: 1.6;
+}
+
+.attachments {
+  display: flex;
+  flex-wrap: wrap;
+  margin: 0 -10rpx;
+}
+
+.attachment-image {
+  width: 220rpx;
+  height: 220rpx;
+  margin: 10rpx;
+  border-radius: 8rpx;
+}
+
+.info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20rpx 0;
+  font-size: 28rpx;
+}
+
+.info-item .label {
+  color: #666;
+}
+
+.info-item .value {
+  color: #333;
+}
+
+.loading, .error {
+  text-align: center;
+  padding: 100rpx 30rpx;
+  color: #999;
+  font-size: 28rpx;
+} 
