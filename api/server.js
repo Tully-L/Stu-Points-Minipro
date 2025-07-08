@@ -27,27 +27,42 @@ const authenticateToken = (req, res, next) => {
 };
 
 // 路由处理函数
-const loginRouter = require('./auth/login');
+const loginHandler = require('./auth/login');
 const tokenRouter = require('./auth/token');
 const roleRouter = require('./user/role');
 const updatePointsRouter = require('./points/update');
 
-// 公开路由
-app.post('/api/login', loginRouter);
-
-// 需要认证的路由
-app.use('/api/token', authenticateToken, tokenRouter);
-app.use('/api/user/role', authenticateToken, roleRouter);
-app.use('/api/points/update', authenticateToken, updatePointsRouter);
+// 根路径
+app.get('/', (req, res) => {
+  res.json({
+    success: true,
+    message: '学生积分系统 API 服务器',
+    version: '1.0.0',
+    endpoints: {
+      health: '/health',
+      login: '/api/login',
+      checkToken: '/api/token/check',
+      userRole: '/api/user/role',
+      updatePoints: '/api/points/update'
+    }
+  });
+});
 
 // 健康检查端点
 app.get('/health', (req, res) => {
   res.json({
+    success: true,
     status: 'ok',
     timestamp: new Date().toISOString(),
     uptime: process.uptime()
   });
 });
+
+// API 路由
+app.post('/api/login', loginHandler);
+app.use('/api/token', authenticateToken, tokenRouter);
+app.use('/api/user/role', authenticateToken, roleRouter);
+app.use('/api/points/update', authenticateToken, updatePointsRouter);
 
 // 错误处理中间件
 app.use((err, req, res, next) => {
@@ -63,12 +78,19 @@ app.use((err, req, res, next) => {
 app.use((req, res) => {
   res.status(404).json({
     success: false,
-    message: '未找到请求的资源'
+    message: '未找到请求的资源',
+    availableEndpoints: {
+      health: '/health',
+      login: '/api/login',
+      checkToken: '/api/token/check',
+      userRole: '/api/user/role',
+      updatePoints: '/api/points/update'
+    }
   });
 });
 
 // 启动服务器
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
   console.log(`服务器已启动，监听端口 ${PORT}`);
   console.log(`健康检查地址: http://localhost:${PORT}/health`);
