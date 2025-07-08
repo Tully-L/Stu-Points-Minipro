@@ -3,7 +3,7 @@
 App({
   globalData: {
     userInfo: null,
-    baseUrl: "https://0704-stu-points-88ejqfi0p-tullys-projects-8854f3cf.vercel.app", // 生产环境
+    baseUrl: "https://stu-points-api.onrender.com", // 生产环境
     token: null,
     role: null,
     retryCount: 0,

@@ -27,18 +27,18 @@ const authenticateToken = (req, res, next) => {
 };
 
 // 路由处理函数
-const loginHandler = require('./auth/login');
-const tokenHandler = require('./auth/token');
-const roleHandler = require('./user/role');
-const updatePointsHandler = require('./points/update');
+const loginRouter = require('./auth/login');
+const tokenRouter = require('./auth/token');
+const roleRouter = require('./user/role');
+const updatePointsRouter = require('./points/update');
 
 // 公开路由
-app.post('/api/login', loginHandler);
+app.post('/api/login', loginRouter);
 
 // 需要认证的路由
-app.use('/api/token', authenticateToken, tokenHandler);
-app.use('/api/user/role', authenticateToken, roleHandler);
-app.use('/api/points/update', authenticateToken, updatePointsHandler);
+app.use('/api/token', authenticateToken, tokenRouter);
+app.use('/api/user/role', authenticateToken, roleRouter);
+app.use('/api/points/update', authenticateToken, updatePointsRouter);
 
 // 健康检查端点
 app.get('/health', (req, res) => {
