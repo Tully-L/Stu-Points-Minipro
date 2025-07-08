@@ -1,17 +1,16 @@
 {
   "name": "student-points-system",
   "version": "1.0.0",
-  "description": "学生积分管理系统",
+  "private": true,
   "scripts": {
-    "dev": "start-dev.bat",
-    "vercel-build": "mkdir -p public && cp -r points/* public/",
-    "deploy": "miniprogram-ci upload --pp ./ --pkp ./private.key --appid wxbdb916d3e2b09add --uv 1.0.0 --desc '首次发布' --enable-es6 true",
-    "preview": "miniprogram-ci preview --pp ./ --pkp ./private.key --appid wxbdb916d3e2b09add --uv 1.0.0 --desc '预览版本' --enable-es6 true --qrcode-format image --qrcode-output-dest './preview.jpg'"
+    "dev": "vercel dev",
+    "deploy": "vercel deploy --prod",
+    "start": "node api/server.js"
   },
   "dependencies": {
-    "miniprogram-ci": "^1.8.35"
-  },
-  "engines": {
-    "node": ">=14"
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "node-fetch": "^2.7.0"
   }
 }

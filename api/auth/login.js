@@ -1,15 +1,13 @@
 ﻿const jwt = require("jsonwebtoken");
+const fetch = require("node-fetch");
 
 // 微信小程序配置
 const WECHAT_APP_ID = process.env.WECHAT_APP_ID;
 const WECHAT_APP_SECRET = process.env.WECHAT_APP_SECRET;
 const JWT_SECRET = process.env.JWT_SECRET;
 
-module.exports = async (req, res) => {
-  if (req.method !== "POST") {
-    return res.status(405).json({ success: false, message: "方法不允许" });
-  }
-
+// 修改为 Express 路由处理函数
+const router = async (req, res) => {
   try {
     const { code } = req.body;
     if (!code) {
@@ -23,7 +21,7 @@ module.exports = async (req, res) => {
     const data = await response.json();
 
     if (data.errcode) {
-      throw new Error(data.errmsg);
+      throw new Error(data.errmsg || "微信接口调用失败");
     }
 
     // 生成token
@@ -36,7 +34,7 @@ module.exports = async (req, res) => {
       { expiresIn: "7d" }
     );
 
-    res.status(200).json({
+    res.json({
       success: true,
       data: {
         token,
@@ -51,3 +49,5 @@ module.exports = async (req, res) => {
     });
   }
 };
+
+module.exports = router;
